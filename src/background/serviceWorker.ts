@@ -1,0 +1,317 @@
+import { parseListBody } from '../domain/listParse.ts';
+import { diffLists } from '../domain/listDiff.ts';
+import { enqueue, initialRunState, rollDay } from '../domain/queue.ts';
+import { entryKey, entryKeys } from '../domain/handle.ts';
+import { DEFAULT_SETTINGS, type ListEntry } from '../domain/types.ts';
+import { applyPace, nearestPace } from '../domain/presets.ts';
+import { fetchRemoteList, loadBundledSeed, persistList } from '../application/listService.ts';
+import { buildPreviewSnapshot } from '../application/previewService.ts';
+import {
+  alarmNameDaily,
+  alarmNameResume,
+  alarmNameTick,
+  ensureAlarms,
+  getCachedSelf,
+  pauseQueue,
+  processNext,
+  startQueue,
+} from '../application/queueRunner.ts';
+import { appendLog, loadStore, normalizeSettings, savePartial } from '../infra/storage.ts';
+import { makeTabFetch, readCsrfFromTab, requireXTab } from '../infra/tabFetch.ts';
+import {
+  assertSenderAllowed,
+  filterAgainstWhitelist,
+  sanitizeEntries,
+  sanitizeList,
+  sanitizeQueueItems,
+} from './messageGuard.ts';
+import type { Msg, MsgResponse, StatusSnapshot } from '../shared/messages.ts';
+
+chrome.runtime.onInstalled.addListener(() => {
+  void (async () => {
+    const store = await loadStore();
+    if (!store.list) {
+      try {
+        const { list } = await loadBundledSeed();
+        await persistList(list, 'seed');
+      } catch (e) {
+        await appendLog({ at: Date.now(), level: 'error', message: `Seed: ${(e as Error).message}` });
+      }
+    }
+    if (!store.run.dayKey) {
+      await savePartial({ run: initialRunState(), settings: store.settings ?? DEFAULT_SETTINGS });
+    }
+    await ensureAlarms(store.settings.autoRefresh);
+  })();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  void (async () => {
+    if (alarm.name === alarmNameTick() || alarm.name === alarmNameResume()) {
+      const store = await loadStore();
+      if (store.run.running || (store.run.resumeAt && store.run.resumeAt <= Date.now() && store.queue.length)) {
+        if (!store.run.running && store.queue.length) {
+          await savePartial({
+            run: { ...rollDay(store.run), running: true, resumeAt: null, resumeReason: null },
+          });
+        }
+        await processNext();
+      }
+    }
+    if (alarm.name === alarmNameDaily()) {
+      /* autoRefresh désactivé dans l'UI simplifiée */
+    }
+  })();
+});
+
+chrome.runtime.onMessage.addListener((message: Msg, sender, sendResponse) => {
+  void (async () => {
+    try {
+      assertSenderAllowed(message, sender);
+      const resp = await handle(message, sender);
+      sendResponse(resp);
+    } catch (e) {
+      sendResponse({ ok: false, error: (e as Error).message } satisfies MsgResponse);
+    }
+  })();
+  return true;
+});
+
+async function statusSnapshot(light = false): Promise<StatusSnapshot> {
+  const store = await loadStore();
+  let self: { id?: string; handle?: string } | null = null;
+  let sessionOk = false;
+  if (!light) {
+    self = await getCachedSelf();
+    sessionOk = !!self;
+  } else {
+    self = await getCachedSelf();
+    sessionOk = !!self;
+  }
+  return {
+    settings: store.settings,
+    list: store.list,
+    listSource: store.listSource,
+    listFetchedAt: store.listFetchedAt,
+    whitelist: store.whitelist,
+    queue: store.queue,
+    run: rollDay(store.run),
+    blockedByExt: store.blockedByExt,
+    sessionOk,
+    self,
+  };
+}
+
+async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<MsgResponse> {
+  switch (msg.type) {
+    case 'PING':
+      return { ok: true, pong: true };
+    case 'GET_STATUS':
+      return { ok: true, status: await statusSnapshot(true) };
+    case 'GET_SELF_CACHED':
+      return { ok: true, status: await statusSnapshot(true) };
+    case 'GET_SETTINGS': {
+      const store = await loadStore();
+      return { ok: true, settings: store.settings };
+    }
+    case 'SET_SETTINGS': {
+      const store = await loadStore();
+      let merged = { ...store.settings, ...msg.settings };
+      if (msg.settings.listUrl && typeof msg.settings.listUrl === 'string') {
+        const u = msg.settings.listUrl.trim();
+        if (u && !u.startsWith('https://')) throw new Error('URL de liste : https uniquement.');
+        merged.listUrl = u;
+      }
+      if (msg.settings.pace) merged = applyPace(merged, msg.settings.pace);
+      else if (!merged.pace) merged = applyPace(merged, nearestPace(merged));
+      const settings = normalizeSettings(merged);
+      await savePartial({ settings });
+      await ensureAlarms(settings.autoRefresh);
+      return { ok: true, settings };
+    }
+    case 'GET_LIST': {
+      const store = await loadStore();
+      return { ok: true, list: store.list, source: store.listSource, fetchedAt: store.listFetchedAt };
+    }
+    case 'SET_LIST': {
+      const list = sanitizeList(msg.list);
+      await persistList(list, msg.source);
+      return { ok: true, list, source: msg.source, fetchedAt: Date.now() };
+    }
+    case 'REFRESH_LIST': {
+      // Return proposed list + diff; do not persist until PREVIEW_DIFF_CONFIRM
+      const store = await loadStore();
+      let list;
+      let warnings: string[] = [];
+      let source: 'url' | 'seed' = 'seed';
+      if (store.settings.listUrl) {
+        const r = await fetchRemoteList(store.settings.listUrl);
+        list = r.list;
+        warnings = r.warnings;
+        source = 'url';
+      } else {
+        const r = await loadBundledSeed();
+        list = r.list;
+        warnings = r.warnings;
+      }
+      const diff = diffLists(store.list?.entries ?? [], list.entries);
+      await chrome.storage.session.set({
+        pendingList: list,
+        pendingListSource: source,
+        pendingAddedKeys: diff.addedKeys,
+      });
+      return {
+        ok: true,
+        list,
+        source,
+        fetchedAt: Date.now(),
+        warnings: [
+          ...warnings,
+          `Diff : +${diff.added.length} / −${diff.removed.length}. Confirmez pour appliquer.`,
+        ],
+      };
+    }
+    case 'PREVIEW_DIFF_CONFIRM': {
+      const list = sanitizeList(msg.list);
+      await persistList(list, msg.source);
+      await chrome.storage.session.set({ lastAddedKeys: msg.addedKeys ?? [] });
+      return { ok: true, list, source: msg.source, fetchedAt: Date.now() };
+    }
+    case 'GET_WHITELIST': {
+      const store = await loadStore();
+      return { ok: true, whitelist: store.whitelist };
+    }
+    case 'SET_WHITELIST': {
+      const whitelist = sanitizeEntries(msg.whitelist, 2000);
+      await savePartial({ whitelist });
+      return { ok: true, whitelist };
+    }
+    case 'ADD_WHITELIST': {
+      const store = await loadStore();
+      const keys = new Set(store.whitelist.flatMap((e) => entryKeys(e)));
+      const next = store.whitelist.slice();
+      for (const e of sanitizeEntries(msg.entries, 100)) {
+        const k = entryKey(e);
+        if (!k || keys.has(k)) continue;
+        next.push(e);
+        for (const kk of entryKeys(e)) keys.add(kk);
+      }
+      await savePartial({ whitelist: next });
+      return { ok: true, whitelist: next };
+    }
+    case 'REMOVE_WHITELIST': {
+      const store = await loadStore();
+      const remove = new Set(msg.keys);
+      const next = store.whitelist.filter((e) => !entryKeys(e).some((k) => remove.has(k)));
+      await savePartial({ whitelist: next });
+      return { ok: true, whitelist: next };
+    }
+    case 'BUILD_PREVIEW': {
+      const entries = msg.entries ? sanitizeEntries(msg.entries) : undefined;
+      const preview = await buildPreviewSnapshot(entries, msg.excludeFollowingByDefault !== false, {
+        precheckNone: !!msg.precheckNone,
+        newlyAddedKeys: msg.newlyAddedKeys,
+      });
+      return { ok: true, preview };
+    }
+    case 'START_QUEUE': {
+      const store = await loadStore();
+      const action = msg.action ?? 'block';
+      let items = sanitizeQueueItems(msg.items);
+      if (action === 'block') {
+        let self = await getCachedSelf();
+        try {
+          if (!self) {
+            const tabId = await requireXTab();
+            const csrf = await readCsrfFromTab(tabId);
+            if (csrf) {
+              const { collectPageScriptUrls } = await import('../infra/tabFetch.ts');
+              const scriptUrls = await collectPageScriptUrls(tabId);
+              self = await getCachedSelf(makeTabFetch(tabId), csrf, { tabId, scriptUrls });
+            }
+          }
+        } catch {
+          /* filter with what we have */
+        }
+        items = filterAgainstWhitelist(items, store.whitelist, self);
+      }
+      const { queue, added } = enqueue(store.queue, items, action);
+      await savePartial({ queue });
+      await startQueue();
+      return { ok: true, added, queueLength: queue.length };
+    }
+    case 'PAUSE_QUEUE':
+      await pauseQueue();
+      return { ok: true, status: await statusSnapshot(true) };
+    case 'RESUME_QUEUE':
+      await startQueue();
+      return { ok: true, status: await statusSnapshot(true) };
+    case 'CLEAR_QUEUE': {
+      await pauseQueue();
+      await savePartial({ queue: [] });
+      return { ok: true, added: 0, queueLength: 0 };
+    }
+    case 'UNDO_EXTENSION_BLOCKS': {
+      const store = await loadStore();
+      const items = store.blockedByExt.map((b) => ({ handle: b.handle, id: b.id }));
+      const { queue, added } = enqueue(store.queue, items, 'unblock');
+      await savePartial({ queue, blockedByExt: [] });
+      await startQueue();
+      return { ok: true, added, queueLength: queue.length };
+    }
+    case 'GET_LOGS': {
+      const store = await loadStore();
+      return { ok: true, logs: store.logs };
+    }
+    case 'CLEAR_LOGS': {
+      await savePartial({ logs: [] });
+      return { ok: true, logs: [] };
+    }
+    case 'RESET_HISTORY': {
+      const store = await loadStore();
+      await savePartial({
+        logs: [],
+        blockedByExt: [],
+        alreadyBlockedKeys: [],
+        run: {
+          ...store.run,
+          totalDone: 0,
+          totalSkipped: 0,
+          actionsToday: 0,
+          lastError: null,
+          lastActionAt: null,
+        },
+      });
+      return { ok: true, status: await statusSnapshot(true) };
+    }
+    case 'OPEN_PREVIEW': {
+      let entries: ListEntry[];
+      if (msg.mode === 'list') {
+        const store = await loadStore();
+        if (!store.list || store.list.entries.length === 0) {
+          return { ok: false, error: 'Aucune liste chargée. Ouvrez les options pour en importer une.' };
+        }
+        entries = store.list.entries;
+      } else {
+        entries = sanitizeEntries(msg.entries, 2000);
+      }
+      const token = crypto.randomUUID();
+      await chrome.storage.session.set({
+        [`preview:${token}`]: {
+          entries,
+          label: msg.sourceLabel ?? '',
+          precheckNone: msg.mode === 'list' ? false : msg.precheckNone !== false,
+        },
+      });
+      // Clear legacy key
+      await chrome.storage.session.remove(['previewEntries', 'previewLabel']);
+      const url = chrome.runtime.getURL(`preview.html?k=${encodeURIComponent(token)}`);
+      await chrome.tabs.create({ url });
+      return { ok: true, added: entries.length, queueLength: 0 };
+    }
+    default:
+      return { ok: false, error: 'Message inconnu' };
+  }
+}
+
+export type { ListEntry };

@@ -1,0 +1,2255 @@
+{
+ "format": "onbloque-list/1",
+ "name": "Blockfacho (onbloquelextremedroite.fun) — import",
+ "description": "Comptes X listés publiquement par le répertoire Blockfacho. Extraits automatiquement de accounts.js et /api/accounts ; aucune entrée ajoutée à la main.",
+ "source_url": "https://onbloquelextremedroite.fun/site",
+ "updated": "2026-10-27",
+ "entries": [
+  {
+   "handle": "MLP_officiel",
+   "name": "Marine Le Pen",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "J_Bardella",
+   "name": "Jordan Bardella",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://x.com/J_Bardella/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "RNational_off",
+   "name": "Rassemblement National",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/les-decodeurs/article/2024/07/09/legislatives-2024-pourquoi-le-rn-qui-revendique-la-majorite-des-suffrages-est-seulement-la-troisieme-force-politique-a-l-assemblee_6248243_4355770.html",
+   "verified": false
+  },
+  {
+   "handle": "ZemmourEric",
+   "name": "Éric Zemmour",
+   "category": "Reconquête",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://x.com/ZemmourEric/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "Coll_Nemesis",
+   "name": "Collectif Némésis",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.twstalker.com/Coll_Nemesis",
+   "verified": false
+  },
+  {
+   "handle": "alexandreloubet",
+   "name": "Alexandre Loubet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ASabatou",
+   "name": "Alexandre Sabatou",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "alexisjollyrn",
+   "name": "Alexis Jolly",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "CordierAlice2",
+   "name": "Alice Cordier",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://politiwiki.fr/wiki/Alice_Cordier",
+   "verified": false
+  },
+  {
+   "handle": "angelique_ranc",
+   "name": "Angélique Ranc",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "annesicard1",
+   "name": "Anne Sicard",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "AntBoulogne54",
+   "name": "Anthony Boulogne",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "villedieu_a",
+   "name": "Antoine Villedieu",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Au_Evrard",
+   "name": "Auguste Evrard",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "A_Dutremble",
+   "name": "Aurélien Dutremble",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "BChaumeil_RN",
+   "name": "Bernard Chaumeil",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "BrunoBilde",
+   "name": "Bruno Bilde",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "BrunoClavet",
+   "name": "Bruno Clavet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ROULLAUDBEATRIC",
+   "name": "Béatrice Roullaud",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "CColombier_RN",
+   "name": "Caroline Colombier",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Parmentier_RN",
+   "name": "Caroline Parmentier",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "cathRimbert84",
+   "name": "Catherine Rimbert",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "BentzChristophe",
+   "name": "Christophe Bentz",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "TribuianiCyril",
+   "name": "Cyril Tribuiani",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "DamienRieu",
+   "name": "Damien Rieu",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.huffingtonpost.fr/politique/article/damien-rieu-ex-porte-parole-de-generation-identitaire-candidat-rn_178387.html",
+   "verified": false
+  },
+  {
+   "handle": "EddyCasterman",
+   "name": "Eddy Casterman",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "EmericSalmon",
+   "name": "Emeric Salmon",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "BlairyEmmanuel",
+   "name": "Emmanuel Blairy",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "e_Fouquart",
+   "name": "Emmanuel Fouquart",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "F_Desouche",
+   "name": "Fdesouche",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.sotwe.com/frdesouche",
+   "verified": false
+  },
+  {
+   "handle": "Flo_Joubert",
+   "name": "Florence Joubert",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "franckallisio",
+   "name": "Franck Allisio",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Boccaletti83",
+   "name": "Frédéric Boccaletti",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Fredericvo79738",
+   "name": "Frédéric-Pierre Vos",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "G_Dussausaye",
+   "name": "Gaëtan Dussausaye",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "gisele_lelouis",
+   "name": "Gisèle Lelouis",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Guillaume_Bigot",
+   "name": "Guillaume Bigot",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "GrangierGe",
+   "name": "Géraldine Grangier",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "H2Lepinau",
+   "name": "Hervé de Lépinau",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "HeleneLaporteRN",
+   "name": "Hélène Laporte",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Jphtanguy",
+   "name": "Jean-Philippe Tanguy",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JocelynDessigny",
+   "name": "Jocelyn Dessigny",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JonathanGery_AN",
+   "name": "Jonathan Gery",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "jordan_guitton",
+   "name": "Jordan Guitton",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JorysB3",
+   "name": "Jorys Bovet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "beaurainjose",
+   "name": "José Beaurain",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JoelleMelinRN",
+   "name": "Joëlle Mélin",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JLechanteux",
+   "name": "Julie Lechanteux",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JulienGabarron",
+   "name": "Julien Gabarron",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "julien_limongi",
+   "name": "Julien Limongi",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JulienOdoul",
+   "name": "Julien Odoul",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "J_Rancoule",
+   "name": "Julien Rancoule",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "JRochedy",
+   "name": "Julien Rochedy",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/pixels/article/2024/07/08/legislatives-2024-chez-les-influenceurs-la-gauche-respire-l-extreme-droite-fulmine_6247903_4408996.html",
+   "verified": false
+  },
+  {
+   "handle": "jerome_buisson",
+   "name": "Jérôme Buisson",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MauvieuxKevin",
+   "name": "Kévin Mauvieux",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "k_pfeffer",
+   "name": "Kévin Pfeffer",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ljacobelli",
+   "name": "Laurent Jacobelli",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Lionel_Tivoli",
+   "name": "Lionel Tivoli",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MarcDeFleurian",
+   "name": "Marc de Fleurian",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "FranceLorho",
+   "name": "Marie-France Lorho",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "marine_hamelet",
+   "name": "Marine Hamelet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MarionMarechal",
+   "name": "Marion Maréchal",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/politique/article/2024/08/07/l-identitaire-philippe-vardon-de-retour-dans-l-orbite-du-rassemblement-national_6272268_823448.html",
+   "verified": false
+  },
+  {
+   "handle": "MatthiasRN",
+   "name": "Matthias Renault",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MarchioMatthieu",
+   "name": "Matthieu Marchio",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MaximeAmblard5",
+   "name": "Maxime Amblard",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "TaverneMichael",
+   "name": "Michaël Taverne",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MichelGuiniot",
+   "name": "Michel Guiniot",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "MichleMartinez3",
+   "name": "Michèle Martinez",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "nadinelechon",
+   "name": "Nadine Lechon",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "NathCarvalho91",
+   "name": "Nathalie Da Conceicao Carvalho",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "NMeizonnet",
+   "name": "Nicolas Meizonnet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ObjectifRemi",
+   "name": "Objectif Remigration",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://citoyen-vigilant.eu/blog/jeunesse-reve-remigration-objectifremi-0163",
+   "verified": false
+  },
+  {
+   "handle": "BallardPhilippe",
+   "name": "Philippe Ballard",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "phlottiaux",
+   "name": "Philippe Lottiaux",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Ph_Schreck",
+   "name": "Philippe Schreck",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Meurin_P",
+   "name": "Pierre Meurin",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "FrDesouche",
+   "name": "Pierre Sautarel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/pixels/article/2024/07/08/legislatives-2024-chez-les-influenceurs-la-gauche-respire-l-extreme-droite-fulmine_6247903_4408996.html",
+   "verified": false
+  },
+  {
+   "handle": "Reconquete_off",
+   "name": "Reconquête",
+   "category": "Reconquête",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/Reconquete_off",
+   "verified": false
+  },
+  {
+   "handle": "RenaudCamus",
+   "name": "Renaud Camus",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.renaud-camus.net/journal/2021/02/16",
+   "verified": false
+  },
+  {
+   "handle": "RNGrandEst",
+   "name": "RN Grand Est",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://testing-when.twstalker.com/RNGrandEst",
+   "verified": false
+  },
+  {
+   "handle": "rn_paca",
+   "name": "RN Provence-Alpes-Côte d’Azur",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://sotwe.twstalker.com/rn_paca",
+   "verified": false
+  },
+  {
+   "handle": "RNational_IDF",
+   "name": "RN Île-de-France",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/RNational_IDF",
+   "verified": false
+  },
+  {
+   "handle": "LeBourgeois7610",
+   "name": "Robert Le Bourgeois",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ChudeauR",
+   "name": "Roger Chudeau",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "knafo_sarah",
+   "name": "Sarah Knafo",
+   "category": "Reconquête",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/Reconquete_off",
+   "verified": false
+  },
+  {
+   "handle": "Serge_Muller24",
+   "name": "Serge Muller",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "sblanc66000",
+   "name": "Sophie Blanc",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "stephan1Rambaud",
+   "name": "Stéphane Rambaud",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "sebchenu",
+   "name": "Sébastien Chenu",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Seb_Humbert",
+   "name": "Sébastien Humbert",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "ThaisEscufon",
+   "name": "Thaïs d’Escufon",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.leparisien.fr/culture-loisirs/thais-descufon-ecartee-deurope-1-apres-un-passage-eclair-dans-lemission-de-cyril-hanouna-30-08-2024-TXL4BKGDOJCBPLVV5TAOMWH56I.php",
+   "verified": false
+  },
+  {
+   "handle": "MonnierThibaut",
+   "name": "Thibaut Monnier",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "thierry_frappe",
+   "name": "Thierry Frappé",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "thierryperez43",
+   "name": "Thierry Perez",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Thomas_Mng",
+   "name": "Thomas Ménagé",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Th_Bnrdt",
+   "name": "Théo Bernhardt",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "Tiffany_Joncour",
+   "name": "Tiffany Joncour",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "T_Houssin",
+   "name": "Timothée Houssin",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "YaelMenache",
+   "name": "Yaël Ménaché",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "YoannGillet30",
+   "name": "Yoann Gillet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www2.assemblee-nationale.fr/deputes/liste/reseaux-sociaux",
+   "verified": false
+  },
+  {
+   "handle": "CNEWS",
+   "name": "CNEWS",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://x.com/CNEWS",
+   "verified": false
+  },
+  {
+   "handle": "CNEWSLesOFF",
+   "name": "CNEWS Les OFF",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/ThierryCabannes",
+   "verified": false
+  },
+  {
+   "handle": "Frontieresmedia",
+   "name": "Frontières",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.sotwe.com/frontieresmedia",
+   "verified": false
+  },
+  {
+   "handle": "linfiltremedia",
+   "name": "L’Infiltré",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://nitter.jaydenha.uk/linfiltremedia/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "Valeurs",
+   "name": "Valeurs actuelles",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/valeurs",
+   "verified": false
+  },
+  {
+   "handle": "BVoltaire",
+   "name": "Boulevard Voltaire",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/gabriellecluzel",
+   "verified": false
+  },
+  {
+   "handle": "tegnererik",
+   "name": "Erik Tegnér",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://lightbrd.com/tegnererik",
+   "verified": false
+  },
+  {
+   "handle": "PascalPraud",
+   "name": "Pascal Praud",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://x.com/PascalPraud/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "christine_kelly",
+   "name": "Christine Kelly",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://x.com/christine_kelly/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "LaurenceFerrari",
+   "name": "Laurence Ferrari",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://nitter.jaydenha.uk/LaurenceFerrari",
+   "verified": false
+  },
+  {
+   "handle": "GauthierBret",
+   "name": "Gauthier Le Bret",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.x.com/GauthierBret/with_replies",
+   "verified": false
+  },
+  {
+   "handle": "deval_eliot",
+   "name": "Eliot Deval",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/ThierryCabannes",
+   "verified": false
+  },
+  {
+   "handle": "gabriellecluzel",
+   "name": "Gabrielle Cluzel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/gabriellecluzel",
+   "verified": false
+  },
+  {
+   "handle": "mbockcote",
+   "name": "Mathieu Bock-Côté",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/ThierryCabannes",
+   "verified": false
+  },
+  {
+   "handle": "ivanrioufol",
+   "name": "Ivan Rioufol",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/ThierryCabannes",
+   "verified": false
+  },
+  {
+   "handle": "Vero_Jacquier",
+   "name": "Véronique Jacquier",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/ThierryCabannes",
+   "verified": false
+  },
+  {
+   "handle": "anthonyfavalli",
+   "name": "Anthony Favalli",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/anthonyfavalli",
+   "verified": false
+  },
+  {
+   "handle": "YOANNUSAI",
+   "name": "Yoann Usai",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://d46rckpsl2ks7laj5lfg.twstalker.com/YOANNUSAI",
+   "verified": false
+  },
+  {
+   "handle": "ElodieHuchard",
+   "name": "Élodie Huchard",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/SniperDeDroite",
+   "verified": false
+  },
+  {
+   "handle": "ThomasBonnet",
+   "name": "Thomas Bonnet",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://testing-when.twstalker.com/ThomasBonnet",
+   "verified": false
+  },
+  {
+   "handle": "quentingerard_",
+   "name": "Quentin Gérard",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://msbrewwc.twstalker.com/quentingerard_",
+   "verified": false
+  },
+  {
+   "handle": "rstainville",
+   "name": "Raphaël Stainville",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://c63706c8-c7b0-4ef4-8c3d-1b3ed59bea37.twstalker.com/rstainville",
+   "verified": false
+  },
+  {
+   "handle": "S_Lignier",
+   "name": "Sébastien Lignier",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://d46rckpsl2ks7laj5lfg.twstalker.com/S_Lignier",
+   "verified": false
+  },
+  {
+   "handle": "JulesTorres17",
+   "name": "Jules Torres",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://d46rckpsl2ks7laj5lfg.twstalker.com/JulesTorres17",
+   "verified": false
+  },
+  {
+   "handle": "Jules_Laurans",
+   "name": "Jules Laurans",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://ssstwitterx.app/jules_laurans/",
+   "verified": false
+  },
+  {
+   "handle": "DavidAlaime",
+   "name": "David Alaime",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.instalker.org/DavidAlaime",
+   "verified": false
+  },
+  {
+   "handle": "JordanFlrtn",
+   "name": "Jordan Florentin",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://jilbab.twstalker.com/JordanFlrtn",
+   "verified": false
+  },
+  {
+   "handle": "Lauriane_Bd",
+   "name": "Lauriane Bernard",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://testing-when.twstalker.com/Lauriane_Bd",
+   "verified": false
+  },
+  {
+   "handle": "Guillaume_fcqt",
+   "name": "Guillaume Foucqueteau",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/Guillaume_fcqt",
+   "verified": false
+  },
+  {
+   "handle": "anais_marechal_",
+   "name": "Anaïs Maréchal",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://sotwe.twstalker.com/anais_marechal_",
+   "verified": false
+  },
+  {
+   "handle": "evaduparc",
+   "name": "Eva Duparc",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://lightbrd.com/evaduparc/media",
+   "verified": false
+  },
+  {
+   "handle": "rigault_charles",
+   "name": "Charles Rigault",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/rigault_charles",
+   "verified": false
+  },
+  {
+   "handle": "GarenShn",
+   "name": "Garen Shnorhokian",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://cdjm.org/files/avis/25-198.pdf",
+   "verified": false
+  },
+  {
+   "handle": "YannMontero",
+   "name": "Yann Montero",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/YannMontero",
+   "verified": false
+  },
+  {
+   "handle": "SevilliaYves",
+   "name": "Yves-Marie Sévillia",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://03-presentation.twstalker.com/SevilliaYves",
+   "verified": false
+  },
+  {
+   "handle": "alienordep",
+   "name": "Aliénor de Pompignan",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://c63706c8-c7b0-4ef4-8c3d-1b3ed59bea37.twstalker.com/alienordep",
+   "verified": false
+  },
+  {
+   "handle": "wdeguerpel",
+   "name": "Wandrille de Guerpel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://jilbab.twstalker.com/wdeguerpel",
+   "verified": false
+  },
+  {
+   "handle": "Eynaud_Marc",
+   "name": "Marc Eynaud",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://workingww.twstalker.com/Eynaud_Marc",
+   "verified": false
+  },
+  {
+   "handle": "radouan_kourak",
+   "name": "Radouan Kourak",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www30.twstalker.com/radouan_kourak",
+   "verified": false
+  },
+  {
+   "handle": "jean_bexon",
+   "name": "Jean Bexon",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://citoyen-vigilant.eu/blog/bexon-fichier-8-juillet-blocages-0352",
+   "verified": false
+  },
+  {
+   "handle": "tvlofficiel",
+   "name": "TV Libertés",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://tvl.fr/actus/ou-suivre-tvlibertes-liens",
+   "verified": false
+  },
+  {
+   "handle": "BildMartial",
+   "name": "Martial Bild",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://tvl.fr/actus/a-ne-pas-manquer-martial-bild-sera-l-invite-d-eric-morillot-ce-dimanche-a-18h-lien-vers-la-video",
+   "verified": false
+  },
+  {
+   "handle": "jylgallou",
+   "name": "Jean-Yves Le Gallou",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.polemia.com/wp-content/uploads/2025/04/Jugement-Nikolic-c-Le-Gallou.pdf",
+   "verified": false
+  },
+  {
+   "handle": "JulietteBriens",
+   "name": "Juliette Briens",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://lcp.fr/sites/lcp.fr/files/2026-05/l17b2698-t1_rapport-enquete.pdf",
+   "verified": false
+  },
+  {
+   "handle": "MagLincorrect",
+   "name": "L’Incorrect",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://entrevue.fr/en/elections/patrick-cohen-et-thomas-legrand-pris-en-flagrant-delit-de-collusion-avec-le-ps-et-de-complot-contre-dati/",
+   "verified": false
+  },
+  {
+   "handle": "Incorrectibles",
+   "name": "Les Incorrectibles",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://tvl.fr/actus/a-ne-pas-manquer-martial-bild-sera-l-invite-d-eric-morillot-ce-dimanche-a-18h-lien-vers-la-video",
+   "verified": false
+  },
+  {
+   "handle": "csapin",
+   "name": "Charles Sapin",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.ojim.fr/portraits/charles-sapin/",
+   "verified": false
+  },
+  {
+   "handle": "p_condomines",
+   "name": "Pauline Condomines",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://mobile.twstalker.com/p_condomines",
+   "verified": false
+  },
+  {
+   "handle": "mathildeklotgen",
+   "name": "Mathilde Klötgen",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://workingww.twstalker.com/mathildeklotgen",
+   "verified": false
+  },
+  {
+   "handle": "IrisBridier",
+   "name": "Iris Bridier",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.bvoltaire.fr/reportage-raphael-renove-ces-statues-que-lon-ne-regardait-plus/",
+   "verified": false
+  },
+  {
+   "handle": "coupeau_maxime",
+   "name": "Maxime Coupeau",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/coupeau_maxime",
+   "verified": false
+  },
+  {
+   "handle": "NicolasBoutin11",
+   "name": "Nicolas Boutin",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://kyawgyii.twstalker.com/NicolasBoutin11",
+   "verified": false
+  },
+  {
+   "handle": "VltnGR",
+   "name": "Valentin Gaure",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://msbrewwc.twstalker.com/VltnGR",
+   "verified": false
+  },
+  {
+   "handle": "LegayMaxime1",
+   "name": "Maxime Legay",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/vivelafrance128",
+   "verified": false
+  },
+  {
+   "handle": "VictorLefebvre",
+   "name": "Victor Lefebvre",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://platform.twstalker.com/fan_de_cnews",
+   "verified": false
+  },
+  {
+   "handle": "morandiniblog",
+   "name": "Jean-Marc Morandini",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://workingww.twstalker.com/PascalPraud",
+   "verified": false
+  },
+  {
+   "handle": "Pierre_GTIL",
+   "name": "Pierre Gentillet",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/politique/article/2024/07/04/legislatives-2024-pierre-gentillet-un-russophile-dans-le-berry_6246778_823448.html",
+   "verified": false
+  },
+  {
+   "handle": "jean_de_lacoste",
+   "name": "Jean de Lacoste Lareymondie",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://source.twstalker.com/jean_de_lacoste",
+   "verified": false
+  },
+  {
+   "handle": "GrisetCatherine",
+   "name": "Catherine Griset",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/94649",
+   "verified": false
+  },
+  {
+   "handle": "jsanchez_rn",
+   "name": "Julien Sanchez",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/88552",
+   "verified": false
+  },
+  {
+   "handle": "thierrymariani",
+   "name": "Thierry Mariani",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/197623",
+   "verified": false
+  },
+  {
+   "handle": "v_joron",
+   "name": "Virginie Joron",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/197627",
+   "verified": false
+  },
+  {
+   "handle": "AndreRougeOff",
+   "name": "André Rougé",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/197690",
+   "verified": false
+  },
+  {
+   "handle": "mandrouet",
+   "name": "Mathilde Androuët",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/197691",
+   "verified": false
+  },
+  {
+   "handle": "pr_thionnet",
+   "name": "Pierre-Romain Thionnet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/200345",
+   "verified": false
+  },
+  {
+   "handle": "jrechagneux",
+   "name": "Julie Rechagneux",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/256882",
+   "verified": false
+  },
+  {
+   "handle": "fabriceleggeri",
+   "name": "Fabrice Leggeri",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/256872",
+   "verified": false
+  },
+  {
+   "handle": "asfrigout",
+   "name": "Anne-Sophie Frigout",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/256876",
+   "verified": false
+  },
+  {
+   "handle": "ValerieDeloge",
+   "name": "Valérie Deloge",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/256886",
+   "verified": false
+  },
+  {
+   "handle": "jleonardelli_",
+   "name": "Julien Leonardelli",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.europarl.europa.eu/meps/fr/256895",
+   "verified": false
+  },
+  {
+   "handle": "groupeRN_off",
+   "name": "Groupe Rassemblement National à l’Assemblée",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://nosparlementaires.fr/groupes/PO845401",
+   "verified": false
+  },
+  {
+   "handle": "jllacapelle",
+   "name": "Jean-Lin Lacapelle",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://jeanlinlacapelle.fr/cnews/une-nouvelle-etape-pour-preparer-une-majorite-parlementaire/",
+   "verified": false
+  },
+  {
+   "handle": "louis_aliot",
+   "name": "Louis Aliot",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lemonde.fr/politique/article/2017/03/15/un-documentaire-fait-ressurgir-les-vieux-demons-du-front-national_5992909_823448.html",
+   "verified": false
+  },
+  {
+   "handle": "CocardeEtud",
+   "name": "La Cocarde étudiante",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.cocardeetudiante.com/",
+   "verified": false
+  },
+  {
+   "handle": "InstitutILIADE",
+   "name": "Institut Iliade",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.dominiquevenner.fr/wp-content/uploads/2014/12/CP-du-21.12.2014_Lancement-du-site-internet-et-des-activites.pdf",
+   "verified": false
+  },
+  {
+   "handle": "LNatifs",
+   "name": "Les Natifs",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://universitepopulairetoulouse.fr/IMG/pdf/mediapart_le_racisme_sans_fard_des_identitaires_qui_ont_vise_aya_nakamura.pdf",
+   "verified": false
+  },
+  {
+   "handle": "actionfrancaise",
+   "name": "Action française",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/accounts.js",
+   "evidence": "https://www.lyonpremiere.fr/faits-divers/lyon-le-drapeau-de-france-peint-sur-des-escaliers-a-la-croix-rousse/",
+   "verified": false
+  },
+  {
+   "handle": "mvalet_officiel",
+   "name": "Matthieu Valet",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Loreine_LAD",
+   "name": "Loreine_LAD",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/Loreine_LAD/status/2114827074460614922",
+   "verified": false
+  },
+  {
+   "handle": "cs_sed",
+   "name": "aSiCsSed",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/cs_sed/status/2111803663559930085",
+   "verified": false
+  },
+  {
+   "handle": "bouliboulibouli",
+   "name": "Bouli",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.lepoint.fr/debats/derriere-le-compte-x-bouli-l-humour-reactionnaire-explose-sur-internet-31-07-2025-2595547_2.php",
+   "verified": false
+  },
+  {
+   "handle": "AlexandreJardin",
+   "name": "Alexandre Jardin",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/AlexandreJardin/status/2114673342842064935",
+   "verified": false
+  },
+  {
+   "handle": "davidlisnard",
+   "name": "David Lisnard",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "FaycalJelil",
+   "name": "Faycal Jelil",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/FaycalJelil/status/2115062505424703637",
+   "verified": false
+  },
+  {
+   "handle": "UIAthee",
+   "name": "Irréductible Athée",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/UIAthee/status/2113538871640089057",
+   "verified": false
+  },
+  {
+   "handle": "RaptorVsWild",
+   "name": "Le raptor",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "pnbsbb",
+   "name": "Parti National Breton",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "CommanderTorenn",
+   "name": "Commander Torenn",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/CommanderTorenn/status/2115109843677724829",
+   "verified": false
+  },
+  {
+   "handle": "norbert_fr",
+   "name": "Constantin - Nobert",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "magelya777",
+   "name": "Magelya",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Sardoche",
+   "name": "Sardoche",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "LBleuBlancRouge",
+   "name": "Bleu Blanc Rouge",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "alcidedefrance",
+   "name": "Alcide de France",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Bruno_Attal_",
+   "name": "Bruno Attal",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "CarolineFourest",
+   "name": "Caroline Fourest",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "louiselzeu",
+   "name": "Louise Montangon",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/deepekachu/status/2111371088970031140",
+   "verified": false
+  },
+  {
+   "handle": "ArMarvailher",
+   "name": "Ar Marvailher",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Europe1",
+   "name": "Europe 1",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "leJDD",
+   "name": "Le JDD",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Breizh_Info",
+   "name": "Breizh-Info (Yann Vallerie)",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "eciotti",
+   "name": "Éric Ciotti",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Causeur",
+   "name": "Causeur",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "omertamedia",
+   "name": "Omerta",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "RiposteLaique",
+   "name": "Riposte Laïque",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "KbgStream",
+   "name": "Kroc Blanc",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "dupontaignan",
+   "name": "Nicolas Dupont-Aignan",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "f_philippot",
+   "name": "Florian Philippot",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "JeanMessiha",
+   "name": "Jean Messiha",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GilbertCollard",
+   "name": "Gilbert Collard",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "destinationcine",
+   "name": "Destination Ciné",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/destinationcine/status/2115127632291672195",
+   "verified": false
+  },
+  {
+   "handle": "GWGoldnadel",
+   "name": "Gilles-William Goldnadel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "CasusLady",
+   "name": "Casus Lady",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GeoffroyLejeune",
+   "name": "Geoffroy Lejeune",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "ChdOrnellas",
+   "name": "Charlotte d'Ornellas",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "PhdeVilliers",
+   "name": "Philippe de Villiers",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "stanislasrig",
+   "name": "Stanislas Rigault",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "PsyGuy007",
+   "name": "Wolf",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "louise_morice_",
+   "name": "Louise Morice",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "SirenesFR",
+   "name": "Sirènes",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "TBT9_W9",
+   "name": "TBT9_W9",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "officielsoral",
+   "name": "Alain Soral",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://t.me/s/AlainSoral",
+   "verified": false
+  },
+  {
+   "handle": "milafique",
+   "name": "Mila Orriols",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.lemonde.fr/pixels/article/2025/01/18/cinq-ans-apres-l-affaire-mila-la-mue-d-un-symbole-de-la-laicite-devenu-egerie-de-l-extreme-droite_6503718_4408996.html",
+   "verified": false
+  },
+  {
+   "handle": "VincLapierre",
+   "name": "Vincent Lapierre",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.ledauphine.com/politique/2025/04/08/a-saint-marcellin-le-ressenti-d-insecurite-et-la-tesla-vandalisee-d-un-youtubeur-proche-de-l-extreme-droite",
+   "verified": false
+  },
+  {
+   "handle": "MaudPK",
+   "name": "Maud Koffler",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.lemonde.fr/economie/article/2025/09/04/pierre-lescure-renonce-a-une-emission-de-debat-sur-sud-radio_6638963_3234.html",
+   "verified": false
+  },
+  {
+   "handle": "LaurentObertone",
+   "name": "Laurent Obertone",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.lejdd.fr/Societe/censure-de-la-furia-lavocat-de-laurent-obertone-interpelle-rachida-dati-163490",
+   "verified": false
+  },
+  {
+   "handle": "BastionMediaFR",
+   "name": "Bastion",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "VAplus_",
+   "name": "VA+",
+   "category": "Groupes",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "margueritestern",
+   "name": "@margueritestern",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "MichelOnfray4",
+   "name": "@MichelOnfray4",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GiacomoFirenze",
+   "name": "Giacomo Firenze",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/GiacomoFirenze/status/2071633538915430422",
+   "verified": false
+  },
+  {
+   "handle": "raphpaillot",
+   "name": "raphpaillot",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "brivael",
+   "name": "brivael",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "TwitchGauchiste",
+   "name": "@TwitchGauchiste",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Psyhodelikus",
+   "name": "@Psyhodelikus",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "le_jarl",
+   "name": "@le_jarl",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "BrunoRetailleau",
+   "name": "Bruno Retailleau",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.publicsenat.fr/actualites/politique/etat-de-droit-les-propos-polemiques-de-bruno-retailleau-inquietent-mais-ne-surprennent-pas-au-senat",
+   "verified": false
+  },
+  {
+   "handle": "sociologuelvl99",
+   "name": "@sociologuelvl99",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "steph16656",
+   "name": "Steph Sainte Marie",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/steph16656/status/2107047165914698199",
+   "verified": false
+  },
+  {
+   "handle": "GTSytb",
+   "name": "GTSytb",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "elonmusk",
+   "name": "elonmusk",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "BouliZellig",
+   "name": "BouliZellig",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "AmauryBucco",
+   "name": "AmauryBucco",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "E2Villiers",
+   "name": "E2Villiers",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "jussetain",
+   "name": "jussetain",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "jyyyceoff_",
+   "name": "JYYYCE",
+   "category": "RN",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/jyyyceoff_/status/2114651477012574487?a=5ITd2DYP2lfDBuB18mE&s=20",
+   "verified": false
+  },
+  {
+   "handle": "Meyerhabib",
+   "name": "Meyerhabib",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Diazinho_fox75",
+   "name": "Diazinho_fox75",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://x.com/Diazinho_fox75/status/2115129760007487775?a=JxMXBOkrT_40PfDPA4c&s=20",
+   "verified": false
+  },
+  {
+   "handle": "realDonaldTrump",
+   "name": "realDonaldTrump",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Nation_x_",
+   "name": "@Nation_x_",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "FBBlackler",
+   "name": "Florence Bergeaud-Backler",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "evidence": "https://www.lefigaro.fr/vox/societe/florence-bergeaud-blackler-pour-certains-emeutiers-piller-des-mecreants-ou-des-colons-s-inscrit-dans-leur-systeme-de-normes-20261019",
+   "verified": false
+  },
+  {
+   "handle": "TrumpDailyPosts",
+   "name": "TrumpDailyPosts",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "21NewsBE",
+   "name": "21NewsBE",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Samuel_Lafont",
+   "name": "Samuel_Lafont",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "JulienChieze",
+   "name": "JulienChieze",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "G_Peltier",
+   "name": "G_Peltier",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "BernardQuintin_",
+   "name": "@BernardQuintin_",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Le_Crapaud47",
+   "name": "Le_Crapaud47",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Simao_rda",
+   "name": "@Simao_rda",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Boulee_Boulee",
+   "name": "Boulee_Boulee",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "VB_Officiel",
+   "name": "VB_Officiel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "imambouli",
+   "name": "imambouli",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "DVanLangenhove",
+   "name": "@DVanLangenhove",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Boulicitoyen",
+   "name": "Boulicitoyen",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "naimamfaddel",
+   "name": "naimamfaddel",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "SwordOfSalomon",
+   "name": "SwordOfSalomon",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "JMLePain_Off",
+   "name": "JMLePain_Off",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "BoskoDeBamako",
+   "name": "BoskoDeBamako",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "julienbahloul",
+   "name": "julienbahloul",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "quoicoubologue",
+   "name": "quoicoubologue",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Zu_Demir",
+   "name": "@Zu_Demir",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Anne_deProvence",
+   "name": "Anne_deProvence",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "KevinDM75",
+   "name": "KevinDM75",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "IlanGabet",
+   "name": "IlanGabet",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GuydhaeseleerVB",
+   "name": "@GuydhaeseleerVB",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "CentreJeanGol",
+   "name": "@CentreJeanGol",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "JDVanceJDVance",
+   "name": "JDVanceJDVance",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "JDVance",
+   "name": "JDVance",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "FranckenTheo",
+   "name": "@FranckenTheo",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GiorgiaMeloni",
+   "name": "GiorgiaMeloni",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Maaroufi9",
+   "name": "@Maaroufi9",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Doramoutot",
+   "name": "Doramoutot",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "GLBouchez",
+   "name": "@GLBouchez",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "NadiaGeerts",
+   "name": "@NadiaGeerts",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "tomvangrieken",
+   "name": "@tomvangrieken",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "RsaTeddyboy",
+   "name": "RsaTeddyboy",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Bart_DeWever",
+   "name": "@Bart_DeWever",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "FDW_VB",
+   "name": "@FDW_VB",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Valek_Maranaj",
+   "name": "Valek_Maranaj",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "CerfiaFR",
+   "name": "CerfiaFR",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "Bfmtv",
+   "name": "Bfmtv",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "SGurbuz__",
+   "name": "@SGurbuz__",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  },
+  {
+   "handle": "AlexandreVaraut",
+   "name": "AlexandreVaraut",
+   "category": "Autres",
+   "source": "https://onbloquelextremedroite.fun/api/accounts",
+   "verified": false
+  }
+ ],
+ "integrity": {
+  "sha256_at_enrich": "21e56539c1aa8a43734d93b7c45b416bf8de1189b2412f6719bbb5e2099d25f3",
+  "enriched_at": "2026-10-27T22:14:37.150Z",
+  "note": "Handles without numeric id are unverified; runtime resolves id and checks handle match before block."
+ }
+}

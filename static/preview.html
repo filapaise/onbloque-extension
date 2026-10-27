@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OnBloque — Aperçu</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="page">
+  <header class="bar wide">
+    <strong>Aperçu avant blocage</strong>
+    <a href="options.html">Options</a>
+  </header>
+  <main class="layout">
+    <section class="card sticky">
+      <p id="source-label" class="muted">Préparation…</p>
+      <div id="counts" class="counts"></div>
+      <div class="row gap wrap">
+        <button id="btn-all" class="btn ghost sm">Tout cocher</button>
+        <button id="btn-none" class="btn ghost sm">Tout décocher</button>
+        <button id="btn-reload" class="btn ghost sm">Rafraîchir les relations</button>
+        <label class="check"><input id="exclude-following" type="checkbox" checked /> Exclure par défaut les comptes que je suis / qui me suivent</label>
+      </div>
+      <div class="row gap">
+        <button id="btn-start" class="btn primary" disabled>Démarrer le blocage des comptes cochés</button>
+        <button id="btn-whitelist" class="btn ghost">Ajouter les cochés à la liste blanche</button>
+      </div>
+      <p id="msg" class="msg" hidden></p>
+      <p class="fine">Aucun blocage ne part sans ce bouton. Plafond journalier et délais s'appliquent ensuite en arrière-plan.</p>
+    </section>
+    <section class="card">
+      <div id="table-wrap">
+        <table id="table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Compte</th>
+              <th>Statut</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="preview.js"></script>
+</body>
+</html>

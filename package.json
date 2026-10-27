@@ -1,0 +1,29 @@
+{
+  "name": "onbloque-extension",
+  "version": "1.2.2",
+  "private": true,
+  "description": "Extension Chrome MV3 : bloquer sur X les comptes d'une liste partagée, avec aperçu, liste blanche et file d'attente plafonnée.",
+  "author": "Fil Apaisé",
+  "license": "MIT",
+  "homepage": "https://github.com/filapaise/onbloque-extension#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filapaise/onbloque-extension.git"
+  },
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate.mjs",
+    "zip": "node scripts/zip.mjs",
+    "all": "npm run typecheck && npm test && npm run build && npm run validate && npm run zip"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0"
+  }
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.zip
+*.tar.gz
+.idea/
+.vscode/
+.DS_Store
+*.log
+.env
+.env.*
+release/
+
+# Notes de travail internes (non publiées)
+store/*.md
+store/*.zip
+store/privacy/
+store/assets/mock/

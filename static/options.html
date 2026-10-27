@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OnBloque — Réglages</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="page options-page">
+  <header class="bar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <strong>Réglages</strong>
+    </div>
+    <a href="preview.html">Aperçu</a>
+  </header>
+
+  <main class="layout narrow">
+    <section class="card">
+      <h1>Rythme</h1>
+      <p class="muted">Combien de comptes bloquer par jour, avec des pauses raisonnables.</p>
+      <div class="segmented" role="radiogroup" aria-label="Rythme" id="pace">
+        <button type="button" class="seg" data-pace="prudent" aria-pressed="false">
+          <strong>Prudent</strong>
+          <span>~50 / jour</span>
+        </button>
+        <button type="button" class="seg" data-pace="normal" aria-pressed="false">
+          <strong>Normal</strong>
+          <span>~200 / jour</span>
+        </button>
+        <button type="button" class="seg" data-pace="max" aria-pressed="false">
+          <strong>Max</strong>
+          <span>500 / jour (lent)</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h1>Liste</h1>
+      <div class="list-summary">
+        <div>
+          <strong id="list-name">Aucune liste</strong>
+          <p class="muted" id="list-meta">—</p>
+        </div>
+        <button type="button" id="btn-refresh" class="btn ghost sm">Mettre à jour</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h1>Comptes protégés</h1>
+      <p class="muted">Votre compte et ceux que vous suivez sont toujours exclus automatiquement. Ajoutez ici d'autres @ à ne jamais bloquer.</p>
+      <div id="wl-chips" class="chips"></div>
+      <label class="sr-only" for="wl-input">Ajouter un compte</label>
+      <input id="wl-input" type="text" placeholder="@ami  (Entrée pour ajouter)" autocomplete="off" />
+    </section>
+
+    <section class="card">
+      <h1>Historique</h1>
+      <div class="row between">
+        <p class="muted" id="history-line">—</p>
+        <button type="button" id="btn-reset" class="btn danger sm">Réinitialiser</button>
+      </div>
+    </section>
+
+    <details class="card advanced">
+      <summary>Avancé</summary>
+      <div class="advanced-body">
+        <label>URL de liste
+          <input id="list-url" type="url" placeholder="https://exemple.org/liste.json" />
+        </label>
+        <label>Importer un fichier
+          <input id="file" type="file" accept=".json,.txt,.csv,text/plain,application/json" />
+        </label>
+        <label>Coller une liste
+          <textarea id="paste" rows="4" placeholder="@exemple"></textarea>
+        </label>
+        <button type="button" id="btn-paste" class="btn ghost sm">Importer le texte</button>
+        <p id="adv-msg" class="msg" hidden></p>
+      </div>
+    </details>
+  </main>
+
+  <div id="toast" class="toast" hidden>Enregistré</div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OnBloque</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="popup">
+  <header class="pop-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <strong>OnBloque</strong>
+    </div>
+    <div id="session" class="status-dot" title="Session" data-state="unknown">
+      <span class="dot"></span>
+      <span class="label">…</span>
+    </div>
+  </header>
+
+  <section class="card progress-card">
+    <div class="progress-ring-wrap">
+      <svg class="ring" viewBox="0 0 72 72" aria-hidden="true">
+        <circle class="ring-bg" cx="36" cy="36" r="30" />
+        <circle id="ring-fg" class="ring-fg" cx="36" cy="36" r="30" />
+      </svg>
+      <div class="ring-label">
+        <strong id="today-num">0</strong>
+        <span>/ <span id="today-cap">500</span></span>
+      </div>
+    </div>
+    <div class="progress-copy">
+      <p class=" progress-title" id="today-title">0 bloqués aujourd'hui sur 500</p>
+      <p class="muted" id="resume-line">Prochaine reprise : —</p>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><span class="stat-val" id="queue">0</span><span class="stat-lbl">En attente</span></div>
+    <div class="stat"><span class="stat-val" id="total-done">0</span><span class="stat-lbl">Bloqués</span></div>
+    <div class="stat"><span class="stat-val" id="total-skip">0</span><span class="stat-lbl">Ignorés</span></div>
+  </section>
+
+  <p id="error" class="banner error" hidden></p>
+
+  <div class="primary-wrap">
+    <button id="btn-toggle" class="btn primary block">Démarrer</button>
+  </div>
+
+  <nav class="link-rows">
+    <a class="link-row" href="preview.html" target="_blank">
+      <span class="ico" aria-hidden="true">◎</span>
+      <span>Aperçu / lancer un blocage</span>
+      <span class="chev">›</span>
+    </a>
+    <a class="link-row" href="options.html" target="_blank">
+      <span class="ico" aria-hidden="true">⚙</span>
+      <span>Options &amp; liste</span>
+      <span class="chev">›</span>
+    </a>
+  </nav>
+
+  <p class="fine foot">Rien ne se bloque sans confirmation dans l'aperçu.</p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
