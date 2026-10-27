@@ -128,5 +128,9 @@ export function initialRunState(): RunState {
     totalDone: 0,
     totalSkipped: 0,
     lastActionAt: null,
+    nextActionAt: null,
+    lastBlocked: null,
+    batchDone: 0,
+    batchSkipped: 0,
   };
 }

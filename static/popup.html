@@ -35,6 +35,17 @@
     </div>
   </section>
 
+  <section class="card live" id="live" hidden aria-live="polite">
+    <p class="live-next" id="live-next">Prochain blocage dans — s</p>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="bar-fg" id="bar-fg"></div></div>
+    <p class="live-count" id="live-count">0 / 0 bloqués</p>
+    <p class="muted live-line" id="live-last" hidden></p>
+    <p class="muted live-line" id="live-eta" hidden></p>
+    <p class="fine live-note" id="live-note"></p>
+  </section>
+
+  <p id="pause-reason" class="banner warn" hidden></p>
+
   <section class="stats">
     <div class="stat"><span class="stat-val" id="queue">0</span><span class="stat-lbl">En attente</span></div>
     <div class="stat"><span class="stat-val" id="total-done">0</span><span class="stat-lbl">Bloqués</span></div>

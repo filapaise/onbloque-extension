@@ -9,6 +9,7 @@ import type {
   Settings,
 } from '../domain/types.ts';
 import type { DiagEntry } from '../infra/diagnostics.ts';
+import type { FabProgress } from '../domain/progress.ts';
 
 export type Msg =
   | { type: 'GET_STATUS' }
@@ -35,6 +36,7 @@ export type Msg =
   | { type: 'OPEN_PREVIEW'; mode: 'list'; sourceLabel?: string }
   | { type: 'OPEN_PREVIEW'; mode?: 'entries'; entries: ListEntry[]; sourceLabel?: string; precheckNone?: boolean }
   | { type: 'PREVIEW_DIFF_CONFIRM'; list: BlockList; source: 'url' | 'seed'; addedKeys: string[] }
+  | { type: 'GET_PROGRESS' }
   | { type: 'PING' };
 
 export interface StatusSnapshot {
@@ -71,6 +73,7 @@ export type MsgResponse =
   | { ok: true; diagnostics: DiagEntry[] }
   | { ok: true; added: number; queueLength: number }
   | { ok: true; pong: true }
+  | { ok: true; progress: FabProgress }
   | { ok: false; error: string };
 
 export function sendMessage<T extends MsgResponse = MsgResponse>(msg: Msg): Promise<T> {

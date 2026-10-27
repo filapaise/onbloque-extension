@@ -3,7 +3,8 @@ import { parseListBody } from '../domain/listParse.ts';
 import type { ListEntry, BlockList } from '../domain/types.ts';
 import type { Msg } from '../shared/messages.ts';
 
-export const CONTENT_ALLOWED_TYPES = ['OPEN_PREVIEW', 'PING'] as const;
+/** GET_PROGRESS ne renvoie que des compteurs (aucun @, aucune liste, aucun réglage). */
+export const CONTENT_ALLOWED_TYPES = ['OPEN_PREVIEW', 'GET_PROGRESS', 'PING'] as const;
 const CONTENT_ALLOWED = new Set<string>(CONTENT_ALLOWED_TYPES);
 
 export function isContentAllowed(type: string): boolean {

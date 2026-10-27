@@ -38,6 +38,8 @@ import { getSelf, openXSession } from './session.ts';
 const ALARM_TICK = 'onbloque-tick';
 const ALARM_DAILY = 'onbloque-daily-list';
 const ALARM_RESUME = 'onbloque-resume';
+/** Filet de sécurité si Chrome endort le service worker pendant l'attente entre deux blocages. */
+const ALARM_NEXT = 'onbloque-next';
 
 let tickTimer: ReturnType<typeof setTimeout> | null = null;
 let runningLock = false;
@@ -57,6 +59,9 @@ export function alarmNameResume(): string {
 }
 export function alarmNameTick(): string {
   return ALARM_TICK;
+}
+export function alarmNameNext(): string {
+  return ALARM_NEXT;
 }
 
 export async function scheduleResume(at: number): Promise<void> {
@@ -80,8 +85,9 @@ export async function startQueue(): Promise<void> {
 export async function pauseQueue(): Promise<void> {
   const store = await loadStore();
   // Pause manuelle : aucune reprise automatique programmée ne doit la contourner.
-  await savePartial({ run: { ...store.run, running: false, resumeAt: null, resumeReason: null } });
+  await savePartial({ run: { ...store.run, running: false, resumeAt: null, resumeReason: null, nextActionAt: null } });
   await chrome.alarms.clear(ALARM_RESUME);
+  await chrome.alarms.clear(ALARM_NEXT);
   if (tickTimer) {
     clearTimeout(tickTimer);
     tickTimer = null;
@@ -104,6 +110,12 @@ function scheduleContinue(delayMs: number): void {
     tickTimer = null;
     void processNext();
   }, delayMs);
+  // Pas de setInterval : une alarme unique réveille le worker s'il a été arrêté entre-temps.
+  try {
+    void chrome.alarms.create(ALARM_NEXT, { when: Date.now() + Math.max(1_000, delayMs) });
+  } catch {
+    /* alarms indisponible (tests) */
+  }
 }
 
 /**
@@ -139,6 +151,14 @@ async function processNextInner(): Promise<void> {
     await savePartial({ run: { ...run, running: false } });
     return;
   }
+  // Attente annoncée à l'utilisateur (compte à rebours) : on ne la raccourcit pas.
+  if (run.nextActionAt) {
+    const wait = run.nextActionAt - Date.now();
+    if (wait > 1_000) {
+      scheduleContinue(wait);
+      return;
+    }
+  }
   // Respect spacing even if alarm fires early
   if (run.lastActionAt) {
     const minGap = store.settings.minDelaySec * 1000;
@@ -160,7 +180,7 @@ async function processNextInner(): Promise<void> {
     return;
   }
   if (store.queue.length === 0) {
-    await savePartial({ run: { ...run, running: false, lastError: null } });
+    await savePartial({ run: { ...run, running: false, lastError: null, nextActionAt: null } });
     return;
   }
 
@@ -195,39 +215,45 @@ async function processNextInner(): Promise<void> {
     const result =
       head.action === 'unblock' ? await unblockUser(ctx, target) : await blockUser(ctx, target);
 
+    const doneAt = Date.now();
+    // Long pause every N
+    const { everyN, pauseSec } = pacePause(store.settings.pace ?? 'prudent');
+    const actionsToday = run.actionsToday + 1;
+    let delay = rest.length ? randomDelayMs(store.settings) : 0;
+    const longPause = rest.length > 0 && everyN > 0 && actionsToday % everyN === 0;
+    if (longPause) delay = Math.max(delay, pauseSec * 1000);
+
     run = clearBackoff({
       ...run,
-      actionsToday: run.actionsToday + 1,
+      actionsToday,
       totalDone: run.totalDone + 1,
       lastError: null,
-      lastActionAt: Date.now(),
+      lastActionAt: doneAt,
+      nextActionAt: rest.length ? doneAt + delay : null,
+      lastBlocked: { handle: result.handle, id: result.id, at: doneAt },
+      batchDone: (run.batchDone ?? 0) + 1,
     });
 
     if (head.action === 'block') {
-      await pushBlocked({ id: result.id, handle: result.handle, at: Date.now() }, entryKeys(result));
+      await pushBlocked({ id: result.id, handle: result.handle, at: doneAt }, entryKeys(result));
     }
 
     await savePartial({ queue: rest, run });
     await appendLog({
-      at: Date.now(),
+      at: doneAt,
       level: 'info',
       handle: result.handle,
       id: result.id,
       message: head.action === 'unblock' ? 'Débloqué' : 'Bloqué',
     });
-
-    // Long pause every N
-    const { everyN, pauseSec } = pacePause(store.settings.pace ?? 'prudent');
-    let delay = randomDelayMs(store.settings);
-    if (everyN > 0 && run.actionsToday > 0 && run.actionsToday % everyN === 0) {
-      delay = Math.max(delay, pauseSec * 1000);
+    if (longPause) {
       await appendLog({
         at: Date.now(),
         level: 'info',
         message: `Pause de sécurité ${pauseSec}s après ${everyN} actions.`,
       });
     }
-    scheduleContinue(delay);
+    scheduleContinue(Math.max(500, delay));
     return;
   } catch (e) {
     const err = e instanceof XApiError ? e : new XApiError(describeError(e), 0, 'unknown');
@@ -243,32 +269,35 @@ async function processNextInner(): Promise<void> {
     switch (decision.kind) {
       case 'rate-limit':
       case 'retry-later': {
-        run = { ...run, ...decision.run };
+        run = { ...run, ...decision.run, nextActionAt: null };
         await savePartial({ queue: store.queue, run });
         await scheduleResume(decision.resumeAt);
         await appendLog({ at: Date.now(), level: 'warn', handle: head.handle, id: head.id, message: decision.message });
         return;
       }
       case 'pause': {
-        run = { ...run, ...decision.run };
+        run = { ...run, ...decision.run, nextActionAt: null };
         await savePartial({ queue: store.queue, run });
         await appendLog({ at: Date.now(), level: 'error', handle: head.handle, id: head.id, message: decision.message });
         return;
       }
       case 'skip': {
         const skipped = run.totalSkipped + 1;
+        const delay = rest.length ? randomDelayMs(store.settings) : 0;
         run = clearBackoff({
           ...run,
           totalSkipped: skipped,
+          batchSkipped: (run.batchSkipped ?? 0) + 1,
+          nextActionAt: rest.length ? Date.now() + delay : null,
           lastError: `${decision.message} (${skipped} ignoré${skipped > 1 ? 's' : ''})`,
         });
         await savePartial({ queue: rest, run });
         await appendLog({ at: Date.now(), level: 'warn', handle: head.handle, id: head.id, message: decision.message });
-        scheduleContinue(randomDelayMs(store.settings));
+        scheduleContinue(Math.max(500, delay));
         return;
       }
       case 'retry-item': {
-        run = { ...run, ...decision.run };
+        run = { ...run, ...decision.run, nextActionAt: null };
         await savePartial({ queue: [{ ...head, attempts: head.attempts + 1 }, ...rest], run });
         await scheduleResume(decision.resumeAt);
         await appendLog({

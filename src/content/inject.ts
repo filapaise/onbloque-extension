@@ -1,31 +1,152 @@
 /**
- * Content script : bouton flottant / ancré dans l'UI x.com.
+ * Content script : bouton flottant compact sur x.com (déplaçable).
  * N'exécute jamais de blocage directement — ouvre l'aperçu via messaging.
+ * Aucun innerHTML : tout est construit avec createElement / createElementNS.
  */
 import { collectHandlesFromPage } from './collect.ts';
 import { sendMessage } from '../shared/messages.ts';
+import { fmtDuration, parseFabProgress, type FabProgress } from '../domain/progress.ts';
+import {
+  DRAG_THRESHOLD,
+  FAB_SIZE,
+  dragTo,
+  isLeftHalf,
+  loadPosition,
+  opensDownward,
+  probePoints,
+  resolveOverlap,
+  savePosition,
+  type FabPos,
+  type PosStorage,
+  type Rect,
+  type Viewport,
+} from './fabPosition.ts';
 
 const ROOT_ID = 'onbloque-fab-root';
 const STYLE_ID = 'onbloque-fab-style';
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const PANEL_HEIGHT_ESTIMATE = 150;
+
+/** Position choisie par l'utilisateur (ou défaut) ; la position affichée peut être remontée. */
+let basePos: FabPos | null = null;
+let shownPos: FabPos | null = null;
+let dragging = false;
+
+function viewport(): Viewport {
+  return { width: window.innerWidth, height: window.innerHeight };
+}
+
+function storageArea(): PosStorage | undefined {
+  try {
+    const local = chrome?.storage?.local;
+    if (!local) return undefined;
+    return {
+      get: (k) => local.get(k) as Promise<Record<string, unknown>>,
+      set: (items) => local.set(items),
+    };
+  } catch {
+    return undefined;
+  }
+}
 
 function ensureStyle(): void {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-#${ROOT_ID}{position:fixed;z-index:9999;right:16px;bottom:88px;font-family:system-ui,-apple-system,sans-serif}
-#${ROOT_ID} .ob-panel{display:none;flex-direction:column;gap:6px;margin-bottom:8px;background:#0f1419;color:#e7e9ea;border:1px solid #2f3336;border-radius:14px;padding:10px;min-width:220px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+#${ROOT_ID}{position:fixed;z-index:9999;right:20px;bottom:140px;font-family:system-ui,-apple-system,sans-serif;visibility:hidden}
+#${ROOT_ID}.ready{visibility:visible}
+#${ROOT_ID} .ob-pop{position:absolute;right:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+#${ROOT_ID}.down .ob-pop{bottom:auto;top:calc(100% + 8px);flex-direction:column-reverse}
+#${ROOT_ID}.left .ob-pop{right:auto;left:0;align-items:flex-start}
+#${ROOT_ID} .ob-panel{display:none;flex-direction:column;gap:6px;background:#0f1419;color:#e7e9ea;border:1px solid #2f3336;border-radius:14px;padding:10px;min-width:220px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
 #${ROOT_ID}.open .ob-panel{display:flex}
-#${ROOT_ID} button{appearance:none;border:0;border-radius:999px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer}
-#${ROOT_ID} .ob-main{background:#1d9bf0;color:#fff;box-shadow:0 4px 16px rgba(29,155,240,.35)}
+#${ROOT_ID} button{appearance:none;border:0;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+#${ROOT_ID} .ob-main{display:flex;align-items:center;height:${FAB_SIZE}px;min-width:${FAB_SIZE}px;padding:0;background:#1d9bf0;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.3);touch-action:none;user-select:none}
+#${ROOT_ID}.left .ob-main{flex-direction:row}
+#${ROOT_ID}:not(.left) .ob-main{flex-direction:row-reverse}
 #${ROOT_ID} .ob-main:hover{background:#1a8cd8}
-#${ROOT_ID} .ob-action{background:#16181c;color:#e7e9ea;border:1px solid #2f3336;text-align:left}
+#${ROOT_ID} .ob-main:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#${ROOT_ID} .ob-icon{flex:0 0 ${FAB_SIZE}px;height:${FAB_SIZE}px;display:flex;align-items:center;justify-content:center}
+#${ROOT_ID} .ob-label{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .18s ease,padding .18s ease}
+#${ROOT_ID} .ob-main:hover .ob-label,#${ROOT_ID} .ob-main:focus-visible .ob-label,#${ROOT_ID}.open .ob-label{max-width:120px}
+#${ROOT_ID}:not(.left) .ob-main:hover .ob-label,#${ROOT_ID}:not(.left) .ob-main:focus-visible .ob-label,#${ROOT_ID}:not(.left).open .ob-label{padding-left:14px}
+#${ROOT_ID}.left .ob-main:hover .ob-label,#${ROOT_ID}.left .ob-main:focus-visible .ob-label,#${ROOT_ID}.left.open .ob-label{padding-right:14px}
+#${ROOT_ID}.dragging .ob-main{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#${ROOT_ID}.dragging .ob-label{max-width:0;padding:0}
+#${ROOT_ID} .ob-action{background:#16181c;color:#e7e9ea;border:1px solid #2f3336;text-align:left;padding:10px 14px}
 #${ROOT_ID} .ob-action:hover{background:#1e2126}
 #${ROOT_ID} .ob-hint{font-size:11px;color:#8b98a5;padding:0 4px 4px}
-#${ROOT_ID}.nav{position:static;right:auto;bottom:auto;margin:8px 12px}
-#${ROOT_ID}.nav .ob-main{width:100%}
+#${ROOT_ID} .ob-icon{position:relative}
+#${ROOT_ID} .ob-ring{position:absolute;inset:0;pointer-events:none;transform:rotate(-90deg);display:none}
+#${ROOT_ID}.busy .ob-ring{display:block}
+#${ROOT_ID} .ob-ring .trk{stroke:rgba(255,255,255,.28)}
+#${ROOT_ID} .ob-ring .val{stroke:#fff;transition:stroke-dashoffset .4s ease}
+#${ROOT_ID}[data-state="cap"] .ob-ring .val,#${ROOT_ID}[data-state="rate-limit"] .ob-ring .val,#${ROOT_ID}[data-state="retry"] .ob-ring .val{stroke:#ffad1f}
+#${ROOT_ID}[data-state="error"] .ob-ring .val{stroke:#f4212e}
+#${ROOT_ID}[data-state="paused"] .ob-ring .val{stroke:#c4c9cd}
+#${ROOT_ID} .ob-count{position:absolute;top:-6px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#0f1419;color:#fff;border:1px solid #2f3336;font-size:10px;font-weight:700;line-height:16px;text-align:center;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
+#${ROOT_ID}:not(.left) .ob-count{right:-6px}
+#${ROOT_ID}.left .ob-count{left:-6px}
+#${ROOT_ID}.busy .ob-count{display:block}
+#${ROOT_ID}[data-state="cap"] .ob-count,#${ROOT_ID}[data-state="rate-limit"] .ob-count,#${ROOT_ID}[data-state="retry"] .ob-count{background:#ffad1f;color:#0f1419;border-color:#ffad1f}
+#${ROOT_ID}[data-state="error"] .ob-count{background:#f4212e;border-color:#f4212e}
+#${ROOT_ID} .ob-flash{padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:240px}
 `;
   document.documentElement.appendChild(style);
+}
+
+/** Icône « cercle barré » construite en SVG via createElementNS (pas d'innerHTML). */
+function buildIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '20');
+  svg.setAttribute('height', '20');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.4');
+  svg.setAttribute('stroke-linecap', 'round');
+  const circle = document.createElementNS(SVG_NS, 'circle');
+  circle.setAttribute('cx', '12');
+  circle.setAttribute('cy', '12');
+  circle.setAttribute('r', '8.5');
+  const line = document.createElementNS(SVG_NS, 'line');
+  line.setAttribute('x1', '6');
+  line.setAttribute('y1', '18');
+  line.setAttribute('x2', '18');
+  line.setAttribute('y2', '6');
+  svg.append(circle, line);
+  return svg;
+}
+
+const RING_R = 18;
+const RING_C = 2 * Math.PI * RING_R;
+
+/** Anneau de progression autour de l'icône (SVG, createElementNS). */
+function buildRing(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', 'ob-ring');
+  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.setAttribute('width', String(FAB_SIZE));
+  svg.setAttribute('height', String(FAB_SIZE));
+  svg.setAttribute('aria-hidden', 'true');
+  for (const cls of ['trk', 'val']) {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('class', cls);
+    c.setAttribute('cx', '20');
+    c.setAttribute('cy', '20');
+    c.setAttribute('r', String(RING_R));
+    c.setAttribute('fill', 'none');
+    c.setAttribute('stroke-width', '2.5');
+    c.setAttribute('stroke-linecap', 'round');
+    if (cls === 'val') {
+      c.setAttribute('stroke-dasharray', RING_C.toFixed(2));
+      c.setAttribute('stroke-dashoffset', RING_C.toFixed(2));
+    }
+    svg.appendChild(c);
+  }
+  return svg;
 }
 
 function buildRoot(): HTMLElement {
@@ -33,6 +154,8 @@ function buildRoot(): HTMLElement {
   if (root) return root;
   root = document.createElement('div');
   root.id = ROOT_ID;
+  const pop = document.createElement('div');
+  pop.className = 'ob-pop';
   const panel = document.createElement('div');
   panel.className = 'ob-panel';
   panel.setAttribute('role', 'menu');
@@ -51,48 +174,157 @@ function buildRoot(): HTMLElement {
     b.textContent = label;
     panel.appendChild(b);
   }
+  pop.appendChild(panel);
   const main = document.createElement('button');
   main.type = 'button';
   main.className = 'ob-main';
   main.setAttribute('aria-expanded', 'false');
-  main.title = 'OnBloque — comptes à bloquer';
-  main.textContent = 'OnBloque';
-  root.append(panel, main);
+  main.setAttribute('aria-label', 'OnBloque — comptes à bloquer');
+  main.title = 'OnBloque — cliquer pour ouvrir, glisser pour déplacer';
+  const icon = document.createElement('span');
+  icon.className = 'ob-icon';
+  icon.append(buildIcon(), buildRing());
+  const label = document.createElement('span');
+  label.className = 'ob-label';
+  label.textContent = 'OnBloque';
+  main.append(icon, label);
+  const count = document.createElement('span');
+  count.className = 'ob-count';
+  count.setAttribute('aria-hidden', 'true');
+  root.append(pop, main, count);
   return root;
 }
 
-function placeRoot(root: HTMLElement): void {
-  // Ancres possibles dans la nav gauche de X (data-testid stables quand présents).
-  const anchors: Array<Element | null | undefined> = [
-    document.querySelector('[data-testid="AppTabBar_More_Menu"]')?.closest('nav'),
-    document.querySelector('nav[role="navigation"]'),
-    document.querySelector('[data-testid="SidebarNav"]'),
-    document.querySelector('header[role="banner"] nav'),
-  ];
-  const nav = anchors.find((a): a is Element => !!a) as HTMLElement | undefined;
-  root.classList.remove('nav');
-  if (nav && !root.isConnected) {
-    // Essayer d'ancrer en bas de la nav ; sinon flottant.
-    try {
-      root.classList.add('nav');
-      nav.appendChild(root);
-      return;
-    } catch {
-      /* fallback */
+/** Applique une position : ancrage à gauche ou à droite selon la moitié d'écran. */
+function applyPosition(root: HTMLElement, pos: FabPos): void {
+  const vp = viewport();
+  shownPos = pos;
+  const left = isLeftHalf(pos, vp);
+  root.classList.toggle('left', left);
+  root.classList.toggle('down', opensDownward(pos, vp, PANEL_HEIGHT_ESTIMATE));
+  root.style.bottom = `${pos.bottom}px`;
+  if (left) {
+    root.style.left = `${vp.width - pos.right - FAB_SIZE}px`;
+    root.style.right = 'auto';
+  } else {
+    root.style.right = `${pos.right}px`;
+    root.style.left = 'auto';
+  }
+}
+
+/** Élément d'UI de X réellement gênant sous un point (fixe, visible, hors OnBloque). */
+function obstacleAt(root: HTMLElement, x: number, y: number): Rect | null {
+  if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) return null;
+  const stack = document.elementsFromPoint(x, y);
+  const top = stack.find((el) => !root.contains(el) && el !== document.documentElement && el !== document.body);
+  if (!top) return null;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let interactive: Element | null = null;
+  for (let el: Element | null = top; el && el !== document.documentElement && el !== document.body; el = el.parentElement) {
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.opacity === '0' || cs.display === 'none') return null;
+    if (!interactive && el.matches('a,button,input,textarea,select,[role="button"],[role="link"],[role="tab"]')) {
+      interactive = el;
+    }
+    if (cs.position === 'fixed') {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return null;
+      // Petit élément fixe (tiroir Messages, pastille Grok, bouton Poster mobile) : obstacle entier.
+      if (r.width <= vw * 0.6 && r.height <= vh * 0.5) return r;
+      // Grand conteneur fixe (barre latérale, barre d'onglets) : seulement ses boutons/liens.
+      return interactive ? interactive.getBoundingClientRect() : null;
     }
   }
-  if (!root.isConnected) {
-    document.documentElement.appendChild(root);
+  return null; // contenu qui défile : pas un obstacle
+}
+
+function probeObstacles(root: HTMLElement, rect: Rect): Rect[] {
+  const out: Rect[] = [];
+  for (const [x, y] of probePoints(rect)) {
+    const o = obstacleAt(root, x, y);
+    if (o) out.push({ left: o.left, top: o.top, right: o.right, bottom: o.bottom });
   }
+  return out;
+}
+
+/** Recalcule la position affichée depuis la position de base (clamp + évitement). */
+function relayout(root: HTMLElement): void {
+  if (!basePos || dragging || root.classList.contains('open')) return;
+  try {
+    const next = resolveOverlap(basePos, viewport(), (r) => probeObstacles(root, r));
+    if (!shownPos || next.right !== shownPos.right || next.bottom !== shownPos.bottom) applyPosition(root, next);
+  } catch {
+    /* elementsFromPoint indisponible : on garde la position actuelle */
+  }
+}
+
+function wireDrag(root: HTMLElement, main: HTMLButtonElement): void {
+  let start: { x: number; y: number; pos: FabPos; id: number } | null = null;
+  let suppressClick = false;
+  main.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !shownPos) return;
+    start = { x: e.clientX, y: e.clientY, pos: shownPos, id: e.pointerId };
+  });
+  main.addEventListener('pointermove', (e) => {
+    if (!start || e.pointerId !== start.id) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    if (!dragging) {
+      dragging = true;
+      root.classList.add('dragging');
+      root.classList.remove('open');
+      main.setAttribute('aria-expanded', 'false');
+      try {
+        main.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    }
+    e.preventDefault();
+    applyPosition(root, dragTo(start.pos, dx, dy, viewport()));
+  });
+  const end = (e: PointerEvent) => {
+    if (!start || e.pointerId !== start.id) return;
+    start = null;
+    if (!dragging) return;
+    dragging = false;
+    suppressClick = true;
+    root.classList.remove('dragging');
+    const dropped = shownPos;
+    if (dropped) {
+      void savePosition(storageArea(), dropped, viewport()).then((saved) => {
+        basePos = saved;
+        relayout(root);
+      });
+    }
+  };
+  main.addEventListener('pointerup', end);
+  main.addEventListener('pointercancel', end);
+  // Un glisser ne doit pas ouvrir le menu.
+  main.addEventListener(
+    'click',
+    (e) => {
+      if (suppressClick) {
+        suppressClick = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
 }
 
 function wire(root: HTMLElement): void {
   if (root.dataset.wired === '1') return;
   root.dataset.wired = '1';
   const main = root.querySelector('.ob-main') as HTMLButtonElement;
+  wireDrag(root, main);
   main.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (shownPos) root.classList.toggle('down', opensDownward(shownPos, viewport(), PANEL_HEIGHT_ESTIMATE));
     root.classList.toggle('open');
     main.setAttribute('aria-expanded', root.classList.contains('open') ? 'true' : 'false');
   });
@@ -101,6 +333,7 @@ function wire(root: HTMLElement): void {
       e.preventDefault();
       e.stopPropagation();
       root.classList.remove('open');
+      main.setAttribute('aria-expanded', 'false');
       const act = btn.dataset.act;
       try {
         let resp;
@@ -129,7 +362,10 @@ function wire(root: HTMLElement): void {
   document.addEventListener(
     'click',
     (e) => {
-      if (!root.contains(e.target as Node)) root.classList.remove('open');
+      if (!root.contains(e.target as Node)) {
+        root.classList.remove('open');
+        main.setAttribute('aria-expanded', 'false');
+      }
     },
     true,
   );
@@ -145,43 +381,128 @@ function explain(error: string | undefined): string {
 }
 
 function flash(root: HTMLElement, text: string): void {
+  const pop = root.querySelector('.ob-pop') as HTMLElement;
   let el = root.querySelector('.ob-flash') as HTMLElement | null;
   if (!el) {
     el = document.createElement('div');
     el.className = 'ob-flash';
-    el.style.cssText =
-      'margin-bottom:8px;padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:240px';
-    root.insertBefore(el, root.firstChild);
+    el.setAttribute('role', 'status');
+    pop.insertBefore(el, pop.firstChild);
   }
   el.textContent = text;
   setTimeout(() => el?.remove(), 6000);
 }
 
+let progress: FabProgress | null = null;
+
+function fabCount(n: number): string {
+  return n < 1000 ? String(n) : n < 10_000 ? `${Math.floor(n / 1000)}k` : '9k+';
+}
+
+/** Anneau + compteur sur le bouton pendant que la file tourne (ou attend une reprise). */
+function renderProgress(root: HTMLElement): void {
+  const main = root.querySelector('.ob-main') as HTMLButtonElement | null;
+  const count = root.querySelector('.ob-count') as HTMLElement | null;
+  const val = root.querySelector('.ob-ring .val');
+  if (!main || !count || !val) return;
+  const p = progress;
+  const busy = !!p && p.remaining > 0 && p.state !== 'idle' && p.state !== 'done';
+  root.classList.toggle('busy', busy);
+  root.dataset.state = p?.state ?? 'idle';
+  if (!busy || !p) {
+    count.textContent = '';
+    main.title = 'OnBloque — cliquer pour ouvrir, glisser pour déplacer';
+    return;
+  }
+  val.setAttribute('stroke-dashoffset', (RING_C * (1 - p.pct)).toFixed(2));
+  count.textContent = fabCount(p.remaining);
+  const secs = p.nextAt ? Math.max(0, Math.ceil((p.nextAt - Date.now()) / 1000)) : 0;
+  let line: string;
+  if (p.state === 'running') line = secs > 0 ? `prochain blocage dans ${fmtDuration(secs)}` : 'blocage en cours…';
+  else if (p.state === 'cap') line = 'plafond du jour atteint, reprise automatique';
+  else if (p.state === 'rate-limit') line = 'limite X, reprise automatique';
+  else if (p.state === 'retry') line = 'erreur passagère, nouvel essai automatique';
+  else if (p.state === 'error') line = 'en pause (erreur) — voir le popup';
+  else line = 'en pause';
+  if (p.state !== 'running' && secs > 0) line += ` dans ${fmtDuration(secs)}`;
+  main.title = `OnBloque — ${p.done} / ${p.total} traités, ${p.remaining} en attente · ${line}`;
+}
+
+function wireProgress(root: HTMLElement): void {
+  if (root.dataset.progressWired === '1') return;
+  root.dataset.progressWired = '1';
+  try {
+    chrome.runtime.onMessage.addListener((msg: unknown, sender) => {
+      // Uniquement le service worker de cette extension (jamais une page ni un autre onglet).
+      if (sender.id !== chrome.runtime.id || sender.tab) return;
+      if (!msg || typeof msg !== 'object' || (msg as { type?: unknown }).type !== 'ONBLOQUE_PROGRESS') return;
+      const p = parseFabProgress((msg as { progress?: unknown }).progress);
+      if (!p) return;
+      progress = p;
+      const r = document.getElementById(ROOT_ID);
+      if (r) renderProgress(r);
+    });
+  } catch {
+    /* contexte invalidé */
+  }
+  void requestProgress();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void requestProgress();
+  });
+}
+
+async function requestProgress(): Promise<void> {
+  const resp = await sendMessage({ type: 'GET_PROGRESS' });
+  if (!resp.ok || !('progress' in resp)) return;
+  const p = parseFabProgress(resp.progress);
+  if (!p) return;
+  progress = p;
+  const r = document.getElementById(ROOT_ID);
+  if (r) renderProgress(r);
+}
+
 function mount(): void {
   ensureStyle();
   const root = buildRoot();
-  placeRoot(root);
+  if (!root.isConnected) document.documentElement.appendChild(root);
   wire(root);
+  wireProgress(root);
+  renderProgress(root);
+  if (basePos) {
+    relayout(root);
+    root.classList.add('ready');
+    return;
+  }
+  void loadPosition(storageArea(), viewport()).then((pos) => {
+    basePos = pos;
+    applyPosition(root, pos);
+    relayout(root);
+    root.classList.add('ready');
+  });
 }
 
 let lastUrl = location.href;
-function onNav(): void {
-  if (location.href !== lastUrl) {
-    lastUrl = location.href;
-  }
-  mount();
+function onTick(): void {
+  if (location.href !== lastUrl) lastUrl = location.href;
+  mount(); // ré-attache si besoin + réévalue les chevauchements (le tiroir de X apparaît tard)
 }
 
 mount();
 
 const obs = new MutationObserver(() => {
-  if (!document.getElementById(ROOT_ID) || !document.getElementById(ROOT_ID)?.isConnected) {
-    mount();
-  }
+  if (!document.getElementById(ROOT_ID)?.isConnected) mount();
 });
 obs.observe(document.documentElement, { childList: true, subtree: true });
 
-// X est une SPA : surveiller l'URL.
-setInterval(onNav, 1500);
-window.addEventListener('popstate', onNav);
+let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const root = document.getElementById(ROOT_ID);
+    if (root) relayout(root);
+  }, 150);
+});
 
+// X est une SPA : surveiller l'URL et l'UI fixe qui apparaît après coup.
+setInterval(onTick, 1500);
+window.addEventListener('popstate', onTick);

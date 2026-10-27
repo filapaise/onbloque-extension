@@ -7,6 +7,7 @@ import { fetchRemoteList, loadBundledSeed, persistList } from '../application/li
 import { buildPreviewSnapshot } from '../application/previewService.ts';
 import {
   alarmNameDaily,
+  alarmNameNext,
   alarmNameResume,
   alarmNameTick,
   ensureAlarms,
@@ -27,6 +28,14 @@ import {
   sanitizeQueueItems,
 } from './messageGuard.ts';
 import type { Msg, MsgResponse, StatusSnapshot } from '../shared/messages.ts';
+import { currentFabProgress, refreshProgressUi } from './progressUi.ts';
+
+// Badge + bouton x.com : mis à jour sur changement d'état, jamais par minuteur.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.run || changes.queue || changes.settings)) void refreshProgressUi();
+});
+chrome.runtime.onStartup?.addListener(() => void refreshProgressUi());
+void refreshProgressUi();
 
 chrome.runtime.onInstalled.addListener(() => {
   void (async () => {
@@ -48,7 +57,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   void (async () => {
-    if (alarm.name === alarmNameTick() || alarm.name === alarmNameResume()) {
+    if (alarm.name === alarmNameTick() || alarm.name === alarmNameResume() || alarm.name === alarmNameNext()) {
+      await refreshProgressUi(); // badge des reprises différées (minutes restantes)
       const store = await loadStore();
       if (store.run.running || (store.run.resumeAt && store.run.resumeAt <= Date.now() && store.queue.length)) {
         if (!store.run.running && store.queue.length) {
@@ -100,6 +110,8 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
   switch (msg.type) {
     case 'PING':
       return { ok: true, pong: true };
+    case 'GET_PROGRESS':
+      return { ok: true, progress: await currentFabProgress() };
     case 'GET_STATUS':
       return { ok: true, status: await statusSnapshot() };
     case 'GET_SETTINGS': {
@@ -223,7 +235,9 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
         items = filterAgainstWhitelist(items, store.whitelist, self);
       }
       const { queue, added } = enqueue(store.queue, items, action);
-      await savePartial({ queue });
+      // Nouveau lot sur une file vide : la barre « X / N » repart de zéro.
+      const run = store.queue.length === 0 ? { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } : store.run;
+      await savePartial({ queue, run });
       await startQueue();
       return { ok: true, added, queueLength: queue.length };
     }
@@ -235,14 +249,16 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
       return { ok: true, status: await statusSnapshot() };
     case 'CLEAR_QUEUE': {
       await pauseQueue();
-      await savePartial({ queue: [] });
+      const store = await loadStore();
+      await savePartial({ queue: [], run: { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } });
       return { ok: true, added: 0, queueLength: 0 };
     }
     case 'UNDO_EXTENSION_BLOCKS': {
       const store = await loadStore();
       const items = store.blockedByExt.map((b) => ({ handle: b.handle, id: b.id }));
       const { queue, added } = enqueue(store.queue, items, 'unblock');
-      await savePartial({ queue, blockedByExt: [] });
+      const run = store.queue.length === 0 ? { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } : store.run;
+      await savePartial({ queue, blockedByExt: [], run });
       await startQueue();
       return { ok: true, added, queueLength: queue.length };
     }
@@ -272,6 +288,9 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
           actionsToday: 0,
           lastError: null,
           lastActionAt: null,
+          lastBlocked: null,
+          batchDone: 0,
+          batchSkipped: 0,
         },
       });
       return { ok: true, status: await statusSnapshot() };

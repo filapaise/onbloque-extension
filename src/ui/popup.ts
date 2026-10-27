@@ -1,5 +1,9 @@
 import { sendMessage, type StatusSnapshot } from '../shared/messages.ts';
 import { fmtRelative } from './format.ts';
+import { fmtClock } from '../domain/errors.ts';
+import { badgeFor, computeProgress, etaLine, fmtWhen, nextLine, SLOW_PACE_NOTE } from '../domain/progress.ts';
+
+let lastStatus: StatusSnapshot | null = null;
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -38,7 +42,70 @@ async function refresh(): Promise<void> {
     err.textContent = ('error' in resp ? resp.error : null) || 'Impossible de joindre l’extension.';
     return;
   }
+  lastStatus = resp.status;
   render(resp.status);
+  renderLive();
+}
+
+/** Bloc « en direct » : recalculé chaque seconde à partir du dernier état connu. */
+function renderLive(): void {
+  const s = lastStatus;
+  if (!s) return;
+  const now = Date.now();
+  const p = computeProgress(s.run, s.queue.length, s.settings, now);
+  const live = $('live');
+  const showLive = p.state !== 'idle';
+  live.hidden = !showLive;
+  live.dataset.state = p.state;
+  if (showLive) {
+    const next = nextLine(p);
+    $('live-next').textContent =
+      p.state === 'running'
+        ? next
+        : p.state === 'done'
+          ? 'Terminé ✓'
+          : p.state === 'paused' || p.state === 'error'
+            ? 'En pause'
+            : p.nextAt
+              ? `Reprise ${fmtWhen(p.nextAt, now)}`
+              : 'En attente';
+    const pct = Math.round(p.pct * 100);
+    $('bar-fg').style.width = `${pct}%`;
+    $('bar').setAttribute('aria-valuenow', String(pct));
+    $('live-count').textContent =
+      `${p.done} / ${p.total} bloqué${p.done > 1 ? 's' : ''}` + (p.skipped ? ` · ${p.skipped} ignoré${p.skipped > 1 ? 's' : ''}` : '');
+    const last = $('live-last');
+    if (p.lastBlocked?.handle) {
+      last.hidden = false;
+      last.textContent = `Dernier bloqué : @${p.lastBlocked.handle} à ${fmtClock(p.lastBlocked.at)}`;
+    } else last.hidden = true;
+    const eta = $('live-eta');
+    const etaText = etaLine(p, s.settings, now);
+    eta.hidden = !etaText;
+    eta.textContent = etaText;
+    $('live-note').textContent = p.state === 'running' ? SLOW_PACE_NOTE : '';
+  }
+  // Raison de la pause, avec l'heure de reprise.
+  const reason = $('pause-reason');
+  const paused = p.state === 'cap' || p.state === 'rate-limit' || p.state === 'retry' || p.state === 'error' || p.state === 'paused';
+  reason.hidden = !paused;
+  reason.textContent = paused ? p.reason : '';
+  // La raison détaillée remplace le bandeau d'erreur brut quand la file attend.
+  if (paused) $('error').hidden = true;
+  // Popup ouvert : le badge affiche les secondes avant le prochain blocage.
+  setBadge(badgeFor(p, { withSeconds: true }));
+}
+
+let lastBadgeText = '';
+function setBadge(b: { text: string; color: string }): void {
+  if (b.text === lastBadgeText) return;
+  lastBadgeText = b.text;
+  try {
+    void chrome.action?.setBadgeBackgroundColor({ color: b.color });
+    void chrome.action?.setBadgeText({ text: b.text });
+  } catch {
+    /* ignore */
+  }
 }
 
 function render(s: StatusSnapshot): void {
@@ -102,6 +169,18 @@ $('btn-toggle').addEventListener('click', async () => {
 
 void refresh();
 setInterval(() => void refresh(), 30_000);
+// Compte à rebours : tic chaque seconde, uniquement tant que le popup est ouvert.
+setInterval(renderLive, 1000);
+// À la fermeture, le badge revient au nombre restant.
+window.addEventListener('pagehide', () => {
+  if (!lastStatus) return;
+  const p = computeProgress(lastStatus.run, lastStatus.queue.length, lastStatus.settings);
+  try {
+    void chrome.action?.setBadgeText({ text: badgeFor(p).text });
+  } catch {
+    /* ignore */
+  }
+});
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.run || changes.queue || changes.settings)) void refresh();
 });

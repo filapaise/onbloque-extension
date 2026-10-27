@@ -53,6 +53,13 @@ export interface RunState {
   totalSkipped: number;
   /** Timestamp du dernier blocage/déblocage réussi. */
   lastActionAt: number | null;
+  /** Heure prévue de la prochaine action (attente volontaire entre deux blocages). */
+  nextActionAt?: number | null;
+  /** Dernier compte bloqué (affiché dans le popup). */
+  lastBlocked?: { handle?: string; id?: string; at: number } | null;
+  /** Progression du lot en cours (remis à zéro quand un lot démarre sur une file vide). */
+  batchDone?: number;
+  batchSkipped?: number;
 }
 
 export interface BlockedRecord {

@@ -41,8 +41,8 @@ function shim(scenario) {
     whitelist: [{ handle: 'ami_demo' }, { handle: 'voisin_demo' }],
     queue: Array.from({ length: scenario === 'ratelimit' ? 140 : 38 }, (_, i) => ({ key: `h:q${i}`, handle: `q${i}`, action: 'block', addedAt: 0, attempts: 0 })),
     run: scenario === 'ratelimit'
-      ? { running: false, dayKey: 'x', actionsToday: 96, backoffLevel: 0, resumeAt: now + 14 * 60_000, resumeReason: 'rate-limit', lastError: 'Limite X atteinte, reprise automatique à 22:41', totalDone: 96, totalSkipped: 4, lastActionAt: now - 60_000 }
-      : { running: true, dayKey: 'x', actionsToday: 12, backoffLevel: 0, resumeAt: null, resumeReason: null, lastError: null, totalDone: 12, totalSkipped: 2, lastActionAt: now - 30_000 },
+      ? { running: false, dayKey: 'x', actionsToday: 96, backoffLevel: 0, resumeAt: now + 14 * 60_000, resumeReason: 'rate-limit', lastError: 'Limite X atteinte, reprise automatique à 22:41', totalDone: 96, totalSkipped: 4, lastActionAt: now - 60_000, nextActionAt: null, lastBlocked: { handle: 'compte_demo_08', at: now - 60_000 }, batchDone: 96, batchSkipped: 4 }
+      : { running: true, dayKey: 'x', actionsToday: 12, backoffLevel: 0, resumeAt: null, resumeReason: null, lastError: null, totalDone: 12, totalSkipped: 2, lastActionAt: now - 30_000, nextActionAt: now + 37_000, lastBlocked: { handle: 'compte_demo_04', at: now - 30_000 }, batchDone: 12, batchSkipped: 2 },
     blockedByExt: [], sessionOk: true, self: { id: '1', handle: 'demo_user' },
   };
   const counts = {};
@@ -81,9 +81,9 @@ body{background:linear-gradient(150deg,#0f1419,#15202b 55%,#1d2a38);display:flex
 iframe{width:340px;height:520px;border:0;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.55);background:#fff}
 </style></head><body><div class="copy">${caption}</div><iframe src="${src}" style="height:${h}px"></iframe></body></html>`;
 writeFileSync(join(work, 'frame-popup.html'), frame('popup-running.html',
-  '<h1>OnBloque</h1><p>La file avance toute seule, au rythme choisi, avec un plafond journalier.</p><p class="tag">#OnBloquelExtremeDroite</p><p style="font-size:14px">Démo fictive — @demo_user</p>', 420));
+  '<h1>OnBloque</h1><p>La file avance toute seule, au rythme choisi, avec un plafond journalier.</p><p class="tag">#OnBloquelExtremeDroite</p><p style="font-size:14px">Démo fictive — @demo_user</p>', 640));
 writeFileSync(join(work, 'frame-ratelimit.html'), frame('popup-ratelimit.html',
-  '<h1>Pas de panique</h1><p>Si X limite les requêtes, la file se met en attente et reprend automatiquement à l’heure indiquée.</p><p class="tag">#OnBloquelExtremeDroite</p><p style="font-size:14px">Démo fictive — @demo_user</p>', 500));
+  '<h1>Pas de panique</h1><p>Si X limite les requêtes, la file se met en attente et reprend automatiquement à l’heure indiquée.</p><p class="tag">#OnBloquelExtremeDroite</p><p style="font-size:14px">Démo fictive — @demo_user</p>', 640));
 writeFileSync(join(work, 'features.html'), `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
 html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f1419;color:#e7e9ea}
 main{padding:70px 110px}h1{font-size:44px;margin:0}h1 span{color:#1d9bf0}.sub{color:#8b98a5;font-size:20px;margin:10px 0 40px}
@@ -123,6 +123,8 @@ mkdirSync(out, { recursive: true });
 for (const [page, file] of shots) {
   const r = await new Promise((resolve) => {
     const p = spawn('google-chrome', [
+      // Profil jetable : ne jamais réutiliser (ni ouvrir d'onglet dans) un Chrome déjà lancé.
+      `--user-data-dir=${work}/chrome-profile`,
       '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
       '--virtual-time-budget=8000', '--window-size=1280,800', `--screenshot=${join(out, file)}`,
       `http://127.0.0.1:${port}/${page}`,
