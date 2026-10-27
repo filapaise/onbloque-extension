@@ -38,6 +38,8 @@ export interface Settings {
   dailyCap: number;
   minDelaySec: number;
   maxDelaySec: number;
+  /** true : délais min/max choisis dans « Réglages avancés » (sinon ceux du preset). */
+  customDelay?: boolean;
   transport: 'auto' | 'tab' | 'direct';
 }
 
@@ -60,6 +62,8 @@ export interface RunState {
   /** Progression du lot en cours (remis à zéro quand un lot démarre sur une file vide). */
   batchDone?: number;
   batchSkipped?: number;
+  /** Début du lot en cours (persisté) : permet de recompter le lot après un rechargement. */
+  batchStartedAt?: number | null;
 }
 
 export interface BlockedRecord {
@@ -115,6 +119,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyCap: 50,
   minDelaySec: 20,
   maxDelaySec: 45,
+  customDelay: false,
   transport: 'tab',
 };
 

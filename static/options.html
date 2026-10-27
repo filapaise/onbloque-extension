@@ -33,6 +33,26 @@
           <span>500 / jour (lent)</span>
         </button>
       </div>
+      <p class="muted pace-desc" id="pace-desc">—</p>
+      <details class="pace-adv" id="pace-adv">
+        <summary>Réglages avancés</summary>
+        <div class="pace-adv-body">
+          <p class="muted">Délai entre deux blocages, tiré au hasard entre le minimum et le maximum. Choisir Prudent, Normal ou Max remet les valeurs du rythme.</p>
+          <div class="delay-row">
+            <label>Minimum (s)
+              <input id="delay-min" type="number" min="15" max="900" step="1" inputmode="numeric" />
+            </label>
+            <label>Maximum (s)
+              <input id="delay-max" type="number" min="15" max="900" step="1" inputmode="numeric" />
+            </label>
+          </div>
+          <p class="banner warn delay-warn">Plus le rythme est rapide, plus X risque de restreindre temporairement votre compte. Minimum 15 s.</p>
+          <div class="row gap">
+            <button type="button" id="btn-delay-save" class="btn ghost sm">Appliquer</button>
+            <p id="delay-msg" class="msg" hidden></p>
+          </div>
+        </div>
+      </details>
     </section>
 
     <section class="card">

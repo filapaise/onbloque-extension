@@ -123,6 +123,14 @@ function scheduleContinue(delayMs: number): void {
  * liste blanche, comptes que vous suivez. Relations indisponibles → throw
  * (la file se met en pause, aucun blocage « à l'aveugle »).
  */
+/**
+ * Heure de la prochaine action : `startedAt + delay` (écart début → début),
+ * jamais moins d'une seconde après la fin du blocage précédent.
+ */
+export function nextActionTime(startedAt: number, doneAt: number, delayMs: number): number {
+  return Math.max(doneAt + 1_000, startedAt + Math.max(0, delayMs));
+}
+
 export async function guardTarget(
   ctx: XContext,
   target: { id: string; handle: string },
@@ -159,8 +167,8 @@ async function processNextInner(): Promise<void> {
       return;
     }
   }
-  // Respect spacing even if alarm fires early
-  if (run.lastActionAt) {
+  // Sans attente annoncée (reprise après pause/erreur) : espacement minimal depuis le dernier blocage.
+  if (!run.nextActionAt && run.lastActionAt) {
     const minGap = store.settings.minDelaySec * 1000;
     const due = run.lastActionAt + minGap - Date.now();
     if (due > 500) {
@@ -190,6 +198,9 @@ async function processNextInner(): Promise<void> {
     return;
   }
 
+  // Le délai du rythme se mesure d'un début de blocage au suivant (comme décrit dans l'UI),
+  // pas après la fin des requêtes (sinon chaque écart serait rallongé de leur durée).
+  const startedAt = Date.now();
   try {
     const session = await openXSession({ background: true });
     const { ctx } = session;
@@ -222,6 +233,7 @@ async function processNextInner(): Promise<void> {
     let delay = rest.length ? randomDelayMs(store.settings) : 0;
     const longPause = rest.length > 0 && everyN > 0 && actionsToday % everyN === 0;
     if (longPause) delay = Math.max(delay, pauseSec * 1000);
+    const nextAt = nextActionTime(startedAt, doneAt, delay);
 
     run = clearBackoff({
       ...run,
@@ -229,7 +241,7 @@ async function processNextInner(): Promise<void> {
       totalDone: run.totalDone + 1,
       lastError: null,
       lastActionAt: doneAt,
-      nextActionAt: rest.length ? doneAt + delay : null,
+      nextActionAt: rest.length ? nextAt : null,
       lastBlocked: { handle: result.handle, id: result.id, at: doneAt },
       batchDone: (run.batchDone ?? 0) + 1,
     });
@@ -253,7 +265,7 @@ async function processNextInner(): Promise<void> {
         message: `Pause de sécurité ${pauseSec}s après ${everyN} actions.`,
       });
     }
-    scheduleContinue(Math.max(500, delay));
+    scheduleContinue(Math.max(500, nextAt - Date.now()));
     return;
   } catch (e) {
     const err = e instanceof XApiError ? e : new XApiError(describeError(e), 0, 'unknown');
@@ -284,16 +296,17 @@ async function processNextInner(): Promise<void> {
       case 'skip': {
         const skipped = run.totalSkipped + 1;
         const delay = rest.length ? randomDelayMs(store.settings) : 0;
+        const nextAt = nextActionTime(startedAt, Date.now(), delay);
         run = clearBackoff({
           ...run,
           totalSkipped: skipped,
           batchSkipped: (run.batchSkipped ?? 0) + 1,
-          nextActionAt: rest.length ? Date.now() + delay : null,
+          nextActionAt: rest.length ? nextAt : null,
           lastError: `${decision.message} (${skipped} ignoré${skipped > 1 ? 's' : ''})`,
         });
         await savePartial({ queue: rest, run });
         await appendLog({ at: Date.now(), level: 'warn', handle: head.handle, id: head.id, message: decision.message });
-        scheduleContinue(Math.max(500, delay));
+        scheduleContinue(Math.max(500, nextAt - Date.now()));
         return;
       }
       case 'retry-item': {

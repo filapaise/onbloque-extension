@@ -1,6 +1,7 @@
 import { parseListBody } from '../domain/listParse.ts';
 import { parseAccountRef, entryKeys } from '../domain/handle.ts';
-import type { PacePreset } from '../domain/types.ts';
+import type { PacePreset, Settings } from '../domain/types.ts';
+import { delayAdjustNote, describePace, parseDelayInput } from '../domain/presets.ts';
 import type { ListEntry } from '../domain/types.ts';
 import { sendMessage } from '../shared/messages.ts';
 import { fmtTime } from './format.ts';
@@ -30,11 +31,58 @@ function setPaceUI(pace: PacePreset): void {
   });
 }
 
+function renderPace(settings: Settings): void {
+  setPaceUI(settings.pace ?? 'prudent');
+  $('pace-desc').textContent = describePace(settings);
+  const min = $('delay-min') as HTMLInputElement;
+  const max = $('delay-max') as HTMLInputElement;
+  // Ne pas écraser une saisie en cours.
+  if (document.activeElement !== min) min.value = String(settings.minDelaySec);
+  if (document.activeElement !== max) max.value = String(settings.maxDelaySec);
+}
+
+function delayMsg(text: string, err = false): void {
+  const el = $('delay-msg');
+  el.hidden = !text;
+  el.textContent = text;
+  el.classList.toggle('err', err);
+}
+
+async function saveDelays(): Promise<void> {
+  const minIn = parseDelayInput(($('delay-min') as HTMLInputElement).value);
+  const maxIn = parseDelayInput(($('delay-max') as HTMLInputElement).value);
+  if (!Number.isFinite(minIn) || !Number.isFinite(maxIn)) {
+    delayMsg('Entrez deux nombres de secondes.', true);
+    return;
+  }
+  const resp = await sendMessage({
+    type: 'SET_SETTINGS',
+    settings: { customDelay: true, minDelaySec: minIn, maxDelaySec: maxIn },
+  });
+  if (!resp.ok || !('settings' in resp)) {
+    delayMsg(('error' in resp ? resp.error : null) || 'Échec', true);
+    return;
+  }
+  ($('delay-min') as HTMLInputElement).value = String(resp.settings.minDelaySec);
+  ($('delay-max') as HTMLInputElement).value = String(resp.settings.maxDelaySec);
+  renderPace(resp.settings);
+  const note = delayAdjustNote(minIn, maxIn, resp.settings);
+  delayMsg(note || 'Délais appliqués.', false);
+  toast();
+}
+
+$('btn-delay-save').addEventListener('click', () => void saveDelays());
+for (const id of ['delay-min', 'delay-max']) {
+  $(id).addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') void saveDelays();
+  });
+}
+
 async function load(): Promise<void> {
   const st = await sendMessage({ type: 'GET_STATUS' });
   if (!st.ok || !('status' in st)) return;
   const s = st.status;
-  setPaceUI(s.settings.pace ?? 'prudent');
+  renderPace(s.settings);
   ($('list-url') as HTMLInputElement).value = s.settings.listUrl || '';
 
   if (s.list) {
@@ -85,7 +133,10 @@ document.querySelectorAll<HTMLButtonElement>('#pace .seg').forEach((btn) => {
   btn.addEventListener('click', async () => {
     const pace = btn.dataset.pace as PacePreset;
     setPaceUI(pace);
-    await sendMessage({ type: 'SET_SETTINGS', settings: { pace } });
+    // Choisir un preset remet ses délais (les valeurs personnalisées sont effacées).
+    const resp = await sendMessage({ type: 'SET_SETTINGS', settings: { pace } });
+    if (resp.ok && 'settings' in resp) renderPace(resp.settings);
+    delayMsg('');
     toast();
   });
 });

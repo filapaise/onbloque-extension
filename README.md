@@ -4,6 +4,8 @@ Une extension Chrome pour bloquer d'un coup les comptes d'extrême droite sur X.
 
 ### ⬇️ [Télécharger la dernière version (zip)](https://github.com/filapaise/onbloque-extension/releases/latest)
 
+Bientôt sur le Chrome Web Store. En attendant, ça s'installe avec le zip en 1 minute 👇
+
 ## Installation en 1 minute
 
 1. Télécharge le zip (lien juste au-dessus) et décompresse-le dans un dossier que tu gardes.
@@ -28,9 +30,11 @@ La liste de départ vient du répertoire Blockfacho ([onbloquelextremedroite.fun
 - **Tu vois la liste avant.** Rien n'est bloqué sans ton accord, tu coches et décoches qui tu veux.
 - **Les gens que tu suis sont protégés.** Ton compte, ceux que tu suis et ceux qui te suivent sont exclus. Tu peux aussi ajouter des comptes à épargner.
 - **Ça va doucement, exprès.** Il y a une limite par jour et une attente entre deux blocages, pour que X ne prenne pas ton compte pour un robot.
-  - Prudent (par défaut) : environ 50 par jour
-  - Normal : environ 200 par jour
-  - Max : 500 par jour, un blocage toutes les 45 à 90 s
+  - Prudent (par défaut) : 50 par jour au plus, un blocage toutes les 20 à 45 s, et une pause de 2 min tous les 10 (environ 30 min pour 50)
+  - Normal : 200 par jour, un blocage toutes les 25 à 55 s, et une pause de 3 min tous les 15 (environ 2 h 45 pour 200)
+  - Max : 500 par jour, un blocage toutes les 45 à 90 s, et une pause de 5 min tous les 20 (environ 11 h pour 500)
+  - Dans **Réglages avancés** (sous les trois rythmes), tu peux choisir toi-même le délai minimum et maximum, 15 s au plus court. Plus c'est rapide, plus X risque de restreindre ton compte. Recliquer sur un rythme remet ses valeurs.
+  - Le délai se compte d'un blocage au suivant. Quand Chrome met l'extension en veille, il peut ajouter quelques secondes.
 - **Tu vois où ça en est.** Compte à rebours avant le prochain blocage, barre de progression, dernier compte bloqué, heure de fin estimée. Le badge sur l'icône montre combien il en reste.
 - **Ça tourne en fond.** Tu peux mettre en pause et reprendre quand tu veux. Garde juste un onglet x.com ouvert.
 - **Ça repart tout seul.** Si X ralentit, la file attend puis reprend. Un compte supprimé est juste ignoré.
@@ -44,7 +48,7 @@ La liste de départ vient du répertoire Blockfacho ([onbloquelextremedroite.fun
 *L'aperçu : tu choisis qui bloquer. Les comptes que tu suis, ceux déjà bloqués et ceux qui n'existent plus sont décochés.*
 
 ![Réglages](store/assets/screenshot-02-options.png)
-*Les réglages : rythme, liste, comptes protégés, historique.*
+*Les réglages : rythme (avec réglages avancés du délai), liste, comptes protégés, historique.*
 
 ![Reprise automatique](store/assets/screenshot-04-reprise-auto.png)
 *Si X limite les requêtes, la file attend et repart toute seule.*
@@ -118,7 +122,7 @@ A Chrome extension to block far-right accounts on X from a shared list. #OnBloqu
 
 - You see the list first and pick who gets blocked.
 - People you follow, and people who follow you, are skipped.
-- Daily cap and slow pace on purpose, so X doesn't flag your account.
+- Daily cap and slow pace on purpose (Max: one block every 45–90 s, 5-minute pause every 20, 500 a day), so X doesn't flag your account. Advanced settings let you pick your own delay (15 s minimum).
 - Nothing leaves your browser. See [PRIVACY.md](PRIVACY.md).
 
 **Build:** `npm install && npm test && npm run build`, then load `dist/`.

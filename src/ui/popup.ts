@@ -70,7 +70,10 @@ function renderLive(): void {
               ? `Reprise ${fmtWhen(p.nextAt, now)}`
               : 'En attente';
     const pct = Math.round(p.pct * 100);
-    $('bar-fg').style.width = `${pct}%`;
+    const fill = $('bar-fg');
+    fill.style.width = `${pct}%`;
+    // Toujours un bout de barre visible dès qu'au moins un compte est traité.
+    fill.classList.toggle('some', p.done + p.skipped > 0);
     $('bar').setAttribute('aria-valuenow', String(pct));
     $('live-count').textContent =
       `${p.done} / ${p.total} bloqué${p.done > 1 ? 's' : ''}` + (p.skipped ? ` · ${p.skipped} ignoré${p.skipped > 1 ? 's' : ''}` : '');

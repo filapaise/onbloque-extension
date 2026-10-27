@@ -1,4 +1,4 @@
-import type { QueueItem, RunState, Settings } from './types.ts';
+import type { BlockedRecord, QueueItem, RunState, Settings } from './types.ts';
 import { entryKey } from './handle.ts';
 
 export function todayKey(d = new Date()): string {
@@ -132,5 +132,49 @@ export function initialRunState(): RunState {
     lastBlocked: null,
     batchDone: 0,
     batchSkipped: 0,
+    batchStartedAt: null,
   };
+}
+
+function count(n: unknown): number {
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+/**
+ * Compteurs du lot en cours, robustes aux rechargements :
+ * - début du lot = `batchStartedAt` persisté, ou à défaut le plus ancien `addedAt`
+ *   de la file (état venu d'une version qui ne l'enregistrait pas) ;
+ * - blocages faits = max(compteur persisté, blocages enregistrés depuis le début du lot).
+ * Valeurs invalides en stockage → 0 (jamais de NaN dans la barre).
+ */
+export function reconcileBatch(run: RunState, queue: QueueItem[], blocked: BlockedRecord[]): RunState {
+  let batchDone = count(run.batchDone);
+  const batchSkipped = count(run.batchSkipped);
+  let startedAt = count(run.batchStartedAt) || null;
+  if (!startedAt && queue.length) {
+    let min = Infinity;
+    for (const q of queue) {
+      const a = count(q?.addedAt);
+      if (a && a < min) min = a;
+    }
+    startedAt = Number.isFinite(min) ? min : null;
+  }
+  if (startedAt && queue.length) {
+    let since = 0;
+    for (const b of blocked) if (count(b?.at) >= startedAt) since++;
+    batchDone = Math.max(batchDone, since);
+  }
+  if (
+    batchDone === run.batchDone &&
+    batchSkipped === run.batchSkipped &&
+    (startedAt ?? null) === (run.batchStartedAt ?? null)
+  ) {
+    return run;
+  }
+  return { ...run, batchDone, batchSkipped, batchStartedAt: startedAt };
+}
+
+/** Nouveau lot sur une file vide : compteurs à zéro, début daté. */
+export function startBatch(run: RunState, now = Date.now()): RunState {
+  return { ...run, batchDone: 0, batchSkipped: 0, batchStartedAt: now, nextActionAt: null };
 }

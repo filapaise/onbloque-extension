@@ -26,7 +26,7 @@ export const FAB_SIZE = 40;
 /** Marge minimale avec les bords du viewport. */
 export const EDGE_MARGIN = 8;
 /** Espace laissé au-dessus d'un élément de X qui gênait. */
-export const NUDGE_GAP = 12;
+export const NUDGE_GAP = 20;
 /** Clé chrome.storage.local (lue/écrite uniquement par le content script). */
 export const POS_KEY = 'fabPosition';
 
@@ -42,8 +42,10 @@ export const MOBILE_MAX_WIDTH = 500;
  * Le bouton « Poster » de la barre latérale gauche n'est jamais concerné (côté droit).
  */
 export function defaultPosition(vp: Viewport): FabPos {
-  if (vp.width <= MOBILE_MAX_WIDTH) return { right: 16, bottom: 150 };
-  return { right: 20, bottom: 140 };
+  // 1.2.6 : plus de marge au-dessus de la pastille Grok (bureau, haut ≈ 121 px du bas)
+  // et du bouton « Poster » mobile (haut ≈ 125 px) : ≥ 40 px d'écart.
+  if (vp.width <= MOBILE_MAX_WIDTH) return { right: 16, bottom: 172 };
+  return { right: 24, bottom: 168 };
 }
 
 function finite(n: unknown): n is number {

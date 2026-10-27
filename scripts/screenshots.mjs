@@ -35,7 +35,7 @@ const demoRows = [
 
 function shim(scenario) {
   const status = {
-    settings: { pace: scenario === 'ratelimit' ? 'max' : 'prudent', listUrl: '', autoRefresh: false, dailyCap: scenario === 'ratelimit' ? 500 : 50, minDelaySec: 20, maxDelaySec: 45, transport: 'tab' },
+    settings: { pace: scenario === 'ratelimit' ? 'max' : 'prudent', listUrl: '', autoRefresh: false, dailyCap: scenario === 'ratelimit' ? 500 : 50, minDelaySec: 20, maxDelaySec: 45, customDelay: false, transport: 'tab' },
     list: { format: 'onbloque-list/1', name: 'Liste de démonstration', entries: demoRows.map((r) => ({ handle: r.handle })) },
     listSource: 'seed', listFetchedAt: now - 3600_000,
     whitelist: [{ handle: 'ami_demo' }, { handle: 'voisin_demo' }],
@@ -68,7 +68,9 @@ function shim(scenario) {
 
 for (const [page, scenario] of [['popup', 'running'], ['popup', 'ratelimit'], ['preview', 'running'], ['options', 'running']]) {
   const html = readFileSync(join(work, `${page}.html`), 'utf8')
-    .replace('<script type="module"', `<script src="shim-${scenario}.js"></script>\n<script type="module"`);
+    .replace('<script type="module"', `<script src="shim-${scenario}.js"></script>\n<script type="module"`)
+    // Capture des réglages : « Réglages avancés » déplié pour le montrer (replié par défaut dans l'extension).
+    .replace('<details class="pace-adv" id="pace-adv">', '<details class="pace-adv" id="pace-adv" open>');
   writeFileSync(join(work, `${page}-${scenario}.html`), html);
   writeFileSync(join(work, `shim-${scenario}.js`), shim(scenario));
 }

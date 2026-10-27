@@ -1,8 +1,7 @@
 import { diffLists } from '../domain/listDiff.ts';
-import { enqueue, initialRunState, rollDay } from '../domain/queue.ts';
+import { enqueue, initialRunState, rollDay, startBatch } from '../domain/queue.ts';
 import { entryKey, entryKeys } from '../domain/handle.ts';
 import { DEFAULT_SETTINGS } from '../domain/types.ts';
-import { applyPace, nearestPace } from '../domain/presets.ts';
 import { fetchRemoteList, loadBundledSeed, persistList } from '../application/listService.ts';
 import { buildPreviewSnapshot } from '../application/previewService.ts';
 import {
@@ -18,7 +17,7 @@ import {
 import { getSelf, openXSession, peekSelf } from '../application/session.ts';
 import { describeError } from '../domain/errors.ts';
 import { clearDiag, loadDiag } from '../infra/diagnostics.ts';
-import { appendLog, loadStore, normalizeSettings, savePartial } from '../infra/storage.ts';
+import { appendLog, loadStore, mergeSettingsPatch, savePartial } from '../infra/storage.ts';
 import {
   assertSenderAllowed,
   filterAgainstWhitelist,
@@ -120,15 +119,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
     }
     case 'SET_SETTINGS': {
       const store = await loadStore();
-      let merged = { ...store.settings, ...msg.settings };
-      if (msg.settings.listUrl && typeof msg.settings.listUrl === 'string') {
-        const u = msg.settings.listUrl.trim();
-        if (u && !u.startsWith('https://')) throw new Error('URL de liste : https uniquement.');
-        merged.listUrl = u;
-      }
-      if (msg.settings.pace) merged = applyPace(merged, msg.settings.pace);
-      else if (!merged.pace) merged = applyPace(merged, nearestPace(merged));
-      const settings = normalizeSettings(merged);
+      const settings = mergeSettingsPatch(store.settings, msg.settings);
       await savePartial({ settings });
       await ensureAlarms(settings.autoRefresh);
       return { ok: true, settings };
@@ -236,7 +227,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
       }
       const { queue, added } = enqueue(store.queue, items, action);
       // Nouveau lot sur une file vide : la barre « X / N » repart de zéro.
-      const run = store.queue.length === 0 ? { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } : store.run;
+      const run = store.queue.length === 0 ? startBatch(store.run) : store.run;
       await savePartial({ queue, run });
       await startQueue();
       return { ok: true, added, queueLength: queue.length };
@@ -250,14 +241,14 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
     case 'CLEAR_QUEUE': {
       await pauseQueue();
       const store = await loadStore();
-      await savePartial({ queue: [], run: { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } });
+      await savePartial({ queue: [], run: { ...store.run, batchDone: 0, batchSkipped: 0, batchStartedAt: null, nextActionAt: null } });
       return { ok: true, added: 0, queueLength: 0 };
     }
     case 'UNDO_EXTENSION_BLOCKS': {
       const store = await loadStore();
       const items = store.blockedByExt.map((b) => ({ handle: b.handle, id: b.id }));
       const { queue, added } = enqueue(store.queue, items, 'unblock');
-      const run = store.queue.length === 0 ? { ...store.run, batchDone: 0, batchSkipped: 0, nextActionAt: null } : store.run;
+      const run = store.queue.length === 0 ? startBatch(store.run) : store.run;
       await savePartial({ queue, blockedByExt: [], run });
       await startQueue();
       return { ok: true, added, queueLength: queue.length };
@@ -291,6 +282,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
           lastBlocked: null,
           batchDone: 0,
           batchSkipped: 0,
+          batchStartedAt: store.queue.length ? Date.now() : null,
         },
       });
       return { ok: true, status: await statusSnapshot() };

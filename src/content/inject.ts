@@ -5,7 +5,7 @@
  */
 import { collectHandlesFromPage } from './collect.ts';
 import { sendMessage } from '../shared/messages.ts';
-import { fmtDuration, parseFabProgress, type FabProgress } from '../domain/progress.ts';
+import { fmtDuration, parseFabProgress, ringFraction, type FabProgress } from '../domain/progress.ts';
 import {
   DRAG_THRESHOLD,
   FAB_SIZE,
@@ -26,6 +26,10 @@ const ROOT_ID = 'onbloque-fab-root';
 const STYLE_ID = 'onbloque-fab-style';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const PANEL_HEIGHT_ESTIMATE = 150;
+/** Anneau de progression : épais et contrasté (piste sombre, arc blanc) dans le bouton bleu. */
+const RING_W = 4;
+const RING_R = FAB_SIZE / 2 - RING_W / 2 - 1;
+const RING_C = 2 * Math.PI * RING_R;
 
 /** Position choisie par l'utilisateur (ou défaut) ; la position affichée peut être remontée. */
 let basePos: FabPos | null = null;
@@ -54,7 +58,7 @@ function ensureStyle(): void {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-#${ROOT_ID}{position:fixed;z-index:9999;right:20px;bottom:140px;font-family:system-ui,-apple-system,sans-serif;visibility:hidden}
+#${ROOT_ID}{position:fixed;z-index:9999;right:24px;bottom:168px;font-family:system-ui,-apple-system,sans-serif;visibility:hidden}
 #${ROOT_ID}.ready{visibility:visible}
 #${ROOT_ID} .ob-pop{position:absolute;right:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 #${ROOT_ID}.down .ob-pop{bottom:auto;top:calc(100% + 8px);flex-direction:column-reverse}
@@ -78,13 +82,15 @@ function ensureStyle(): void {
 #${ROOT_ID} .ob-action:hover{background:#1e2126}
 #${ROOT_ID} .ob-hint{font-size:11px;color:#8b98a5;padding:0 4px 4px}
 #${ROOT_ID} .ob-icon{position:relative}
-#${ROOT_ID} .ob-ring{position:absolute;inset:0;pointer-events:none;transform:rotate(-90deg);display:none}
+#${ROOT_ID} .ob-ring{position:absolute;left:0;top:0;width:${FAB_SIZE}px;height:${FAB_SIZE}px;pointer-events:none;transform:rotate(-90deg);display:none;overflow:visible}
 #${ROOT_ID}.busy .ob-ring{display:block}
-#${ROOT_ID} .ob-ring .trk{stroke:rgba(255,255,255,.28)}
-#${ROOT_ID} .ob-ring .val{stroke:#fff;transition:stroke-dashoffset .4s ease}
-#${ROOT_ID}[data-state="cap"] .ob-ring .val,#${ROOT_ID}[data-state="rate-limit"] .ob-ring .val,#${ROOT_ID}[data-state="retry"] .ob-ring .val{stroke:#ffad1f}
-#${ROOT_ID}[data-state="error"] .ob-ring .val{stroke:#f4212e}
-#${ROOT_ID}[data-state="paused"] .ob-ring .val{stroke:#c4c9cd}
+#${ROOT_ID} .ob-ring circle{fill:none!important;stroke-width:${RING_W}px!important;vector-effect:none}
+#${ROOT_ID} .ob-ring .trk{stroke:rgba(15,20,25,.55)!important}
+#${ROOT_ID} .ob-ring .val{stroke:#ffffff!important;stroke-linecap:round;transition:stroke-dashoffset .4s ease;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+#${ROOT_ID}[data-state="cap"] .ob-ring .val,#${ROOT_ID}[data-state="rate-limit"] .ob-ring .val,#${ROOT_ID}[data-state="retry"] .ob-ring .val{stroke:#ffd166!important}
+#${ROOT_ID}[data-state="error"] .ob-ring .val{stroke:#ff6b74!important}
+#${ROOT_ID}[data-state="paused"] .ob-ring .val{stroke:#e7e9ea!important}
+#${ROOT_ID}.stale .ob-main{background:#536471}
 #${ROOT_ID} .ob-count{position:absolute;top:-6px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#0f1419;color:#fff;border:1px solid #2f3336;font-size:10px;font-weight:700;line-height:16px;text-align:center;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
 #${ROOT_ID}:not(.left) .ob-count{right:-6px}
 #${ROOT_ID}.left .ob-count{left:-6px}
@@ -120,8 +126,7 @@ function buildIcon(): SVGSVGElement {
   return svg;
 }
 
-const RING_R = 18;
-const RING_C = 2 * Math.PI * RING_R;
+
 
 /** Anneau de progression autour de l'icône (SVG, createElementNS). */
 function buildRing(): SVGSVGElement {
@@ -138,7 +143,7 @@ function buildRing(): SVGSVGElement {
     c.setAttribute('cy', '20');
     c.setAttribute('r', String(RING_R));
     c.setAttribute('fill', 'none');
-    c.setAttribute('stroke-width', '2.5');
+    c.setAttribute('stroke-width', String(RING_W));
     c.setAttribute('stroke-linecap', 'round');
     if (cls === 'val') {
       c.setAttribute('stroke-dasharray', RING_C.toFixed(2));
@@ -405,6 +410,7 @@ function renderProgress(root: HTMLElement): void {
   const count = root.querySelector('.ob-count') as HTMLElement | null;
   const val = root.querySelector('.ob-ring .val');
   if (!main || !count || !val) return;
+  if (root.classList.contains('stale')) return;
   const p = progress;
   const busy = !!p && p.remaining > 0 && p.state !== 'idle' && p.state !== 'done';
   root.classList.toggle('busy', busy);
@@ -414,7 +420,7 @@ function renderProgress(root: HTMLElement): void {
     main.title = 'OnBloque — cliquer pour ouvrir, glisser pour déplacer';
     return;
   }
-  val.setAttribute('stroke-dashoffset', (RING_C * (1 - p.pct)).toFixed(2));
+  val.setAttribute('stroke-dashoffset', (RING_C * (1 - ringFraction(p.pct))).toFixed(2));
   count.textContent = fabCount(p.remaining);
   const secs = p.nextAt ? Math.max(0, Math.ceil((p.nextAt - Date.now()) / 1000)) : 0;
   let line: string;
@@ -481,10 +487,35 @@ function mount(): void {
   });
 }
 
+/** Faux après un rechargement / une mise à jour de l'extension (ce script devient orphelin). */
+function contextAlive(): boolean {
+  try {
+    return !!chrome?.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Script orphelin : ses compteurs sont figés. Plutôt qu'un faux « 0 / N traités »,
+ * on dit clairement de recharger la page (le nouveau script lira l'état persisté).
+ */
+function markStale(root: HTMLElement): void {
+  if (root.classList.contains('stale')) return;
+  root.classList.add('stale');
+  root.classList.remove('busy');
+  const count = root.querySelector('.ob-count') as HTMLElement | null;
+  if (count) count.textContent = '';
+  const main = root.querySelector('.ob-main') as HTMLButtonElement | null;
+  if (main) main.title = 'OnBloque a été rechargé : rechargez cette page x.com pour voir la progression.';
+}
+
 let lastUrl = location.href;
 function onTick(): void {
   if (location.href !== lastUrl) lastUrl = location.href;
   mount(); // ré-attache si besoin + réévalue les chevauchements (le tiroir de X apparaît tard)
+  const root = document.getElementById(ROOT_ID);
+  if (root && !contextAlive()) markStale(root);
 }
 
 mount();

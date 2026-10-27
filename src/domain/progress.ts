@@ -1,6 +1,6 @@
 /**
  * Progression visible de la file (popup, badge, bouton x.com) — logique pure.
- * Objectif : que l'attente volontaire de 20–90 s entre deux blocages ne
+ * Objectif : que l'attente volontaire (15 s minimum) entre deux blocages ne
  * ressemble jamais à un blocage de l'extension.
  */
 import { fmtClock } from './errors.ts';
@@ -181,6 +181,15 @@ export function etaLine(p: Progress, settings: Settings, now = Date.now()): stri
   if (p.etaDays > 1) return `Fin estimée dans ~${p.etaDays} jours (plafond de ${settings.dailyCap} par jour)`;
   if (p.etaAt) return `Fin estimée vers ${fmtWhen(p.etaAt, now).replace(/^à /, '')}`;
   return '';
+}
+
+/**
+ * Part de l'anneau du bouton x.com à remplir : dès qu'un compte est traité,
+ * au moins 6 % pour que l'arc reste visible (18 / 271 ne doit pas sembler vide).
+ */
+export function ringFraction(pct: number): number {
+  if (!Number.isFinite(pct) || pct <= 0) return 0;
+  return Math.min(1, Math.max(0.06, pct));
 }
 
 export function countLabel(n: number): string {
