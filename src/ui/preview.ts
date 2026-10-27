@@ -58,11 +58,13 @@ async function refresh(): Promise<void> {
     newlyAddedKeys,
   });
   if (!resp.ok || !('preview' in resp)) {
+    $('source-label').textContent = 'Aperçu indisponible.';
     showMsg(('error' in resp ? resp.error : null) || 'Erreur', true);
     ($('btn-start') as HTMLButtonElement).disabled = true;
     return;
   }
   if (resp.preview.abortReason) {
+    $('source-label').textContent = 'Aperçu indisponible.';
     showMsg(resp.preview.abortReason, true);
     rows = [];
     statusCounts = {};
@@ -72,6 +74,8 @@ async function refresh(): Promise<void> {
   }
   rows = resp.preview.rows;
   statusCounts = resp.preview.counts;
+  if (resp.preview.notes.length) showMsg(resp.preview.notes.join(' '));
+  else hideMsg();
   $('source-label').textContent = resp.preview.sessionOk
     ? `Connecté${resp.preview.self?.handle ? ` en @${resp.preview.self.handle}` : ''} — cochez puis démarrez.`
     : 'Session x.com non détectée.';
@@ -95,6 +99,7 @@ function renderCounts(): void {
     box.appendChild(el('span', { text: `À bloquer : ${live.toBlockChecked} / ${live.toBlockTotal}` }));
   }
   for (const [k, label] of [
+    ['not-found', 'Introuvables'],
     ['mismatch', 'Incohérents'],
     ['already-blocked', 'Déjà bloqués'],
     ['whitelisted', 'Liste blanche'],
@@ -160,6 +165,10 @@ function showMsg(text: string, err = false): void {
   eln.hidden = false;
   eln.textContent = text;
   eln.classList.toggle('err', err);
+}
+
+function hideMsg(): void {
+  $('msg').hidden = true;
 }
 
 function truncate(s: string, n: number): string {

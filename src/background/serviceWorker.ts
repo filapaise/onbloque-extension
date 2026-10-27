@@ -1,8 +1,7 @@
-import { parseListBody } from '../domain/listParse.ts';
 import { diffLists } from '../domain/listDiff.ts';
 import { enqueue, initialRunState, rollDay } from '../domain/queue.ts';
 import { entryKey, entryKeys } from '../domain/handle.ts';
-import { DEFAULT_SETTINGS, type ListEntry } from '../domain/types.ts';
+import { DEFAULT_SETTINGS } from '../domain/types.ts';
 import { applyPace, nearestPace } from '../domain/presets.ts';
 import { fetchRemoteList, loadBundledSeed, persistList } from '../application/listService.ts';
 import { buildPreviewSnapshot } from '../application/previewService.ts';
@@ -11,16 +10,18 @@ import {
   alarmNameResume,
   alarmNameTick,
   ensureAlarms,
-  getCachedSelf,
   pauseQueue,
   processNext,
   startQueue,
 } from '../application/queueRunner.ts';
+import { getSelf, openXSession, peekSelf } from '../application/session.ts';
+import { describeError } from '../domain/errors.ts';
+import { clearDiag, loadDiag } from '../infra/diagnostics.ts';
 import { appendLog, loadStore, normalizeSettings, savePartial } from '../infra/storage.ts';
-import { makeTabFetch, readCsrfFromTab, requireXTab } from '../infra/tabFetch.ts';
 import {
   assertSenderAllowed,
   filterAgainstWhitelist,
+  previewEntriesFor,
   sanitizeEntries,
   sanitizeList,
   sanitizeQueueItems,
@@ -71,23 +72,16 @@ chrome.runtime.onMessage.addListener((message: Msg, sender, sendResponse) => {
       const resp = await handle(message, sender);
       sendResponse(resp);
     } catch (e) {
-      sendResponse({ ok: false, error: (e as Error).message } satisfies MsgResponse);
+      sendResponse({ ok: false, error: describeError(e) } satisfies MsgResponse);
     }
   })();
   return true;
 });
 
-async function statusSnapshot(light = false): Promise<StatusSnapshot> {
+async function statusSnapshot(): Promise<StatusSnapshot> {
   const store = await loadStore();
-  let self: { id?: string; handle?: string } | null = null;
-  let sessionOk = false;
-  if (!light) {
-    self = await getCachedSelf();
-    sessionOk = !!self;
-  } else {
-    self = await getCachedSelf();
-    sessionOk = !!self;
-  }
+  const self = peekSelf();
+  const sessionOk = !!self;
   return {
     settings: store.settings,
     list: store.list,
@@ -107,9 +101,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
     case 'PING':
       return { ok: true, pong: true };
     case 'GET_STATUS':
-      return { ok: true, status: await statusSnapshot(true) };
-    case 'GET_SELF_CACHED':
-      return { ok: true, status: await statusSnapshot(true) };
+      return { ok: true, status: await statusSnapshot() };
     case 'GET_SETTINGS': {
       const store = await loadStore();
       return { ok: true, settings: store.settings };
@@ -219,19 +211,14 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
       const action = msg.action ?? 'block';
       let items = sanitizeQueueItems(msg.items);
       if (action === 'block') {
-        let self = await getCachedSelf();
-        try {
-          if (!self) {
-            const tabId = await requireXTab();
-            const csrf = await readCsrfFromTab(tabId);
-            if (csrf) {
-              const { collectPageScriptUrls } = await import('../infra/tabFetch.ts');
-              const scriptUrls = await collectPageScriptUrls(tabId);
-              self = await getCachedSelf(makeTabFetch(tabId), csrf, { tabId, scriptUrls });
-            }
+        // Filtrage anticipé ; la file revérifie chaque compte résolu avant blocage.
+        let self = peekSelf();
+        if (!self) {
+          try {
+            self = await getSelf(await openXSession());
+          } catch {
+            /* la file refusera de bloquer tant que le compte n'est pas identifié */
           }
-        } catch {
-          /* filter with what we have */
         }
         items = filterAgainstWhitelist(items, store.whitelist, self);
       }
@@ -242,10 +229,10 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
     }
     case 'PAUSE_QUEUE':
       await pauseQueue();
-      return { ok: true, status: await statusSnapshot(true) };
+      return { ok: true, status: await statusSnapshot() };
     case 'RESUME_QUEUE':
       await startQueue();
-      return { ok: true, status: await statusSnapshot(true) };
+      return { ok: true, status: await statusSnapshot() };
     case 'CLEAR_QUEUE': {
       await pauseQueue();
       await savePartial({ queue: [] });
@@ -263,6 +250,11 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
       const store = await loadStore();
       return { ok: true, logs: store.logs };
     }
+    case 'GET_DIAGNOSTICS':
+      return { ok: true, diagnostics: await loadDiag() };
+    case 'CLEAR_DIAGNOSTICS':
+      await clearDiag();
+      return { ok: true, diagnostics: [] };
     case 'CLEAR_LOGS': {
       await savePartial({ logs: [] });
       return { ok: true, logs: [] };
@@ -282,24 +274,17 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
           lastActionAt: null,
         },
       });
-      return { ok: true, status: await statusSnapshot(true) };
+      return { ok: true, status: await statusSnapshot() };
     }
     case 'OPEN_PREVIEW': {
-      let entries: ListEntry[];
-      if (msg.mode === 'list') {
-        const store = await loadStore();
-        if (!store.list || store.list.entries.length === 0) {
-          return { ok: false, error: 'Aucune liste chargée. Ouvrez les options pour en importer une.' };
-        }
-        entries = store.list.entries;
-      } else {
-        entries = sanitizeEntries(msg.entries, 2000);
-      }
+      // En mode « list », le content script n'envoie rien : la liste stockée est lue ici.
+      const store = msg.mode === 'list' ? await loadStore() : null;
+      const entries = previewEntriesFor(msg, store?.list ?? null);
       const token = crypto.randomUUID();
       await chrome.storage.session.set({
         [`preview:${token}`]: {
           entries,
-          label: msg.sourceLabel ?? '',
+          label: String(msg.sourceLabel ?? '').slice(0, 120),
           precheckNone: msg.mode === 'list' ? false : msg.precheckNone !== false,
         },
       });
@@ -314,4 +299,3 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
   }
 }
 
-export type { ListEntry };

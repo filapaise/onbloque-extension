@@ -18,8 +18,10 @@ function resumeLabel(s: StatusSnapshot): string {
       s.run.resumeReason === 'cap'
         ? 'plafond'
         : s.run.resumeReason === 'rate-limit'
-          ? 'limite de débit'
-          : '';
+          ? 'limite X'
+          : s.run.resumeReason === 'error'
+            ? 'reprise automatique'
+            : '';
     const when = fmtRelative(s.run.resumeAt);
     return `Prochaine reprise : ${when}${why ? ` (${why})` : ''}`;
   }

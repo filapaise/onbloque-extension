@@ -183,4 +183,48 @@ $('btn-reset').addEventListener('click', async () => {
   await load();
 });
 
+let diagText = '';
+
+async function loadDiagnostics(): Promise<void> {
+  const resp = await sendMessage({ type: 'GET_DIAGNOSTICS' });
+  const box = $('diag-list');
+  while (box.firstChild) box.removeChild(box.firstChild);
+  const list = resp.ok && 'diagnostics' in resp ? resp.diagnostics : [];
+  diagText = list
+    .map((d) => [fmtTime(d.at), d.step, d.endpoint, d.status ? `HTTP ${d.status}` : '', d.code, d.note].filter(Boolean).join(' · '))
+    .join('\n');
+  if (!list.length) {
+    const li = document.createElement('li');
+    li.className = 'muted';
+    li.textContent = 'Aucune erreur enregistrée.';
+    box.appendChild(li);
+    return;
+  }
+  for (const d of list.slice(0, 40)) {
+    const li = document.createElement('li');
+    const when = document.createElement('strong');
+    when.textContent = fmtTime(d.at);
+    const rest = document.createElement('span');
+    rest.textContent = ` ${[d.step, d.endpoint, d.status ? `HTTP ${d.status}` : '', d.code, d.note].filter(Boolean).join(' · ')}`;
+    li.append(when, rest);
+    box.appendChild(li);
+  }
+}
+
+$('btn-diag-refresh').addEventListener('click', () => void loadDiagnostics());
+$('btn-diag-clear').addEventListener('click', async () => {
+  await sendMessage({ type: 'CLEAR_DIAGNOSTICS' });
+  await loadDiagnostics();
+  toast('Diagnostic effacé');
+});
+$('btn-diag-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(diagText || 'Aucune erreur enregistrée.');
+    toast('Copié');
+  } catch {
+    toast('Copie impossible');
+  }
+});
+$('diag-card').addEventListener('toggle', () => void loadDiagnostics());
+
 void load();

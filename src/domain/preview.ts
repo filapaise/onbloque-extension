@@ -11,6 +11,12 @@ export interface PreviewInput {
   excludeFollowingByDefault?: boolean;
   /** Si true, les lignes sans relation connue restent décochées. */
   relationsIncomplete?: boolean;
+  /**
+   * Si true, la réponse de X couvre toute la liste (friendships/lookup) :
+   * un compte absent de la réponse n'existe plus (supprimé, renommé, suspendu)
+   * → statut « introuvable », décoché.
+   */
+  absentMeansNotFound?: boolean;
   /** Ne rien précocher (mode page). */
   precheckNone?: boolean;
   /** Handles/ids nouvellement ajoutés à la liste → décochés. */
@@ -49,6 +55,9 @@ export function buildPreview(input: PreviewInput): PreviewRow[] {
       status = 'whitelisted';
     } else if (rel?.blocking || keys.some((k) => input.alreadyBlocked?.has(k))) {
       status = 'already-blocked';
+    } else if (input.absentMeansNotFound && !rel) {
+      status = 'not-found';
+      warnings.push('Introuvable sur X (supprimé, renommé ou suspendu) — non coché');
     } else if (input.relationsIncomplete && !rel) {
       status = 'relation-unknown';
       warnings.push('Relation inconnue — non coché');
@@ -66,7 +75,7 @@ export function buildPreview(input: PreviewInput): PreviewRow[] {
     let checked = false;
     if (!precheckNone && status === 'to-block') checked = true;
     if (status === 'following' || status === 'followed-by') checked = !excludeFollowing && !precheckNone;
-    if (status === 'mismatch' || status === 'relation-unknown' || status === 'self' || status === 'whitelisted' || status === 'already-blocked') {
+    if (status === 'not-found' || status === 'mismatch' || status === 'relation-unknown' || status === 'self' || status === 'whitelisted' || status === 'already-blocked') {
       checked = false;
     }
     if (input.newlyAddedKeys?.has(key)) checked = false;

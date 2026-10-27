@@ -78,6 +78,19 @@
         <p id="adv-msg" class="msg" hidden></p>
       </div>
     </details>
+
+    <details class="card advanced" id="diag-card">
+      <summary>Diagnostic</summary>
+      <div class="advanced-body">
+        <p class="muted">Dernières erreurs techniques de la file (heure, étape, endpoint X, code HTTP). Aucun cookie ni jeton n’est enregistré. Utile pour signaler un problème.</p>
+        <ul id="diag-list" class="diag-list"></ul>
+        <div class="row gap">
+          <button type="button" id="btn-diag-refresh" class="btn ghost sm">Actualiser</button>
+          <button type="button" id="btn-diag-copy" class="btn ghost sm">Copier</button>
+          <button type="button" id="btn-diag-clear" class="btn ghost sm">Effacer</button>
+        </div>
+      </div>
+    </details>
   </main>
 
   <div id="toast" class="toast" hidden>Enregistré</div>

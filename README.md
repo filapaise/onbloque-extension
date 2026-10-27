@@ -1,5 +1,7 @@
 # OnBloque — #OnBloquelExtremeDroite
 
+<p align="center"><img src="store/assets/promo-small-440x280.png" alt="OnBloque — #OnBloquelExtremeDroite" width="440"></p>
+
 **OnBloque** est une extension Chrome / Chromium (Manifest V3) qui vous aide à **bloquer sur X (Twitter) les comptes d’extrême droite** d’une liste partagée — dans l’esprit de la campagne citoyenne **#OnBloquelExtremeDroite**.
 
 Une liste de départ est embarquée (import public du répertoire Blockfacho / [onbloquelextremedroite.fun](https://onbloquelextremedroite.fun/site)). Vous pouvez aussi utiliser votre propre liste.
@@ -16,8 +18,29 @@ Une liste de départ est embarquée (import public du répertoire Blockfacho / [
   - **Normal** — ~200 / jour
   - **Max** — 500 / jour, espacés de 45 à 90 s avec des pauses
 - **File d’attente en arrière-plan** : pause / reprise depuis le popup, journal local.
+- **Reprise automatique** : si X limite les requêtes, la file attend l’heure annoncée par X puis repart toute seule. Un compte supprimé ou suspendu est simplement ignoré, la file continue.
+- **Diagnostic** (Réglages) : dernières erreurs techniques (endpoint, code HTTP), sans aucune donnée de session, pour signaler un problème.
 - **Bouton intégré à x.com** : « Bloquer les comptes de cette page » / « Bloquer toute la liste » (toujours via l’aperçu).
 - Listes au format JSON, CSV ou texte (coller, importer un fichier ou URL https).
+
+## Captures
+
+*Captures réalisées avec des données de démonstration (compte fictif @demo_user, comptes fictifs).*
+
+![Popup : la file avance au rythme choisi, avec un plafond journalier](store/assets/screenshot-01-popup.png)
+*Le popup : progression du jour, comptes en attente, bloqués et ignorés, pause / reprise.*
+
+![Aperçu avant blocage](store/assets/screenshot-03-preview.png)
+*L’aperçu : vous cochez les comptes à bloquer. Les comptes que vous suivez, votre liste blanche, les comptes déjà bloqués et ceux introuvables sur X sont décochés.*
+
+![Réglages](store/assets/screenshot-02-options.png)
+*Les réglages : rythme (Prudent, Normal, Max), liste, comptes protégés, historique et diagnostic.*
+
+![Reprise automatique après une limite X](store/assets/screenshot-04-reprise-auto.png)
+*Si X limite les requêtes, la file attend et reprend toute seule à l’heure indiquée.*
+
+![Fonctionnalités](store/assets/screenshot-05-features.png)
+*En résumé : liste partagée, aperçu obligatoire, comptes protégés, rythme raisonnable.*
 
 ## Installation en mode développeur (depuis la release)
 

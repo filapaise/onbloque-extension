@@ -8,6 +8,7 @@ import type {
   RunState,
   Settings,
 } from '../domain/types.ts';
+import type { DiagEntry } from '../infra/diagnostics.ts';
 
 export type Msg =
   | { type: 'GET_STATUS' }
@@ -28,11 +29,12 @@ export type Msg =
   | { type: 'UNDO_EXTENSION_BLOCKS' }
   | { type: 'GET_LOGS' }
   | { type: 'CLEAR_LOGS' }
+  | { type: 'GET_DIAGNOSTICS' }
+  | { type: 'CLEAR_DIAGNOSTICS' }
   | { type: 'RESET_HISTORY' }
-  | { type: 'CONTENT_COLLECT_PAGE' }
-  | { type: 'OPEN_PREVIEW'; entries: ListEntry[]; sourceLabel?: string; precheckNone?: boolean; mode?: 'list' | 'entries' }
+  | { type: 'OPEN_PREVIEW'; mode: 'list'; sourceLabel?: string }
+  | { type: 'OPEN_PREVIEW'; mode?: 'entries'; entries: ListEntry[]; sourceLabel?: string; precheckNone?: boolean }
   | { type: 'PREVIEW_DIFF_CONFIRM'; list: BlockList; source: 'url' | 'seed'; addedKeys: string[] }
-  | { type: 'GET_SELF_CACHED' }
   | { type: 'PING' };
 
 export interface StatusSnapshot {
@@ -55,6 +57,8 @@ export interface PreviewSnapshot {
   sessionOk: boolean;
   abortReason?: string | null;
   relationsOk?: boolean;
+  /** Avertissements non bloquants (mode de secours, liste d'abonnés partielle…). */
+  notes: string[];
 }
 
 export type MsgResponse =
@@ -64,6 +68,7 @@ export type MsgResponse =
   | { ok: true; whitelist: ListEntry[] }
   | { ok: true; preview: PreviewSnapshot }
   | { ok: true; logs: LogEntry[] }
+  | { ok: true; diagnostics: DiagEntry[] }
   | { ok: true; added: number; queueLength: number }
   | { ok: true; pong: true }
   | { ok: false; error: string };

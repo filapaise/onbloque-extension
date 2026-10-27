@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPreview } from '../src/domain/preview.ts';
 import { diffLists } from '../src/domain/listDiff.ts';
-import { isAllowedBundleUrl, extractUserByScreenNameQueryId } from '../src/infra/queryIdDiscovery.ts';
+import { isAllowedBundleUrl } from '../src/infra/graphqlOps.ts';
 import { parseListBody, MAX_ENTRIES } from '../src/domain/listParse.ts';
 import { PACE_PRESETS } from '../src/domain/presets.ts';
 import { isSkippable, frenchError } from '../src/domain/errors.ts';

@@ -258,3 +258,6 @@ details.advanced[open] > summary::after { content: '˅'; }
 @media (prefers-color-scheme: dark) {
   .toast { background: #e7e9ea; color: #0f1419; }
 }
+
+.diag-list { list-style: none; padding: 0; margin: 8px 0; font-size: 12px; max-height: 260px; overflow: auto; }
+.diag-list li { padding: 4px 0; border-bottom: 1px solid rgba(127,127,127,.2); word-break: break-word; }

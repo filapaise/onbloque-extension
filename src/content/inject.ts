@@ -4,7 +4,6 @@
  */
 import { collectHandlesFromPage } from './collect.ts';
 import { sendMessage } from '../shared/messages.ts';
-import type { ListEntry } from '../domain/types.ts';
 
 const ROOT_ID = 'onbloque-fab-root';
 const STYLE_ID = 'onbloque-fab-style';
@@ -45,12 +44,12 @@ function buildRoot(): HTMLElement {
     ['page', 'Bloquer les comptes de cette page'],
     ['list', 'Bloquer toute la liste'],
   ] as const) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ob-action';
-    btn.dataset.act = act;
-    btn.textContent = label;
-    panel.appendChild(btn);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ob-action';
+    b.dataset.act = act;
+    b.textContent = label;
+    panel.appendChild(b);
   }
   const main = document.createElement('button');
   main.type = 'button';
@@ -104,35 +103,26 @@ function wire(root: HTMLElement): void {
       root.classList.remove('open');
       const act = btn.dataset.act;
       try {
+        let resp;
         if (act === 'page') {
           const entries = collectHandlesFromPage();
           if (!entries.length) {
             flash(root, 'Aucun compte détecté sur cette page.');
             return;
           }
-          await sendMessage({
+          resp = await sendMessage({
             type: 'OPEN_PREVIEW',
             entries,
             sourceLabel: `page:${location.pathname}`,
             precheckNone: true,
           });
         } else if (act === 'list') {
-          // Le content script n'a pas à lire l'état : il demande la liste
-          // stockée, le background la charge lui-même.
-          const resp = await sendMessage({
-            type: 'OPEN_PREVIEW',
-            mode: 'list',
-            entries: [],
-            sourceLabel: 'liste',
-            precheckNone: false,
-          });
-          if (!resp.ok) {
-            flash(root, ('error' in resp ? resp.error : null) || 'Impossible d’ouvrir la liste.');
-            return;
-          }
+          // Le content script ne lit pas l'état : le background charge la liste stockée.
+          resp = await sendMessage({ type: 'OPEN_PREVIEW', mode: 'list', sourceLabel: 'liste' });
         }
+        if (resp && !resp.ok) flash(root, explain(resp.error));
       } catch (err) {
-        flash(root, (err as Error).message);
+        flash(root, explain((err as Error).message));
       }
     });
   });
@@ -145,6 +135,15 @@ function wire(root: HTMLElement): void {
   );
 }
 
+/** Raison lisible côté page (jamais un faux « liste vide »). */
+function explain(error: string | undefined): string {
+  if (!error) return 'OnBloque ne répond pas. Rechargez la page.';
+  if (/context invalidated|Receiving end does not exist/i.test(error)) {
+    return 'L’extension a été rechargée : rechargez cette page x.com.';
+  }
+  return error;
+}
+
 function flash(root: HTMLElement, text: string): void {
   let el = root.querySelector('.ob-flash') as HTMLElement | null;
   if (!el) {
@@ -155,7 +154,7 @@ function flash(root: HTMLElement, text: string): void {
     root.insertBefore(el, root.firstChild);
   }
   el.textContent = text;
-  setTimeout(() => el?.remove(), 3500);
+  setTimeout(() => el?.remove(), 6000);
 }
 
 function mount(): void {
@@ -186,4 +185,3 @@ obs.observe(document.documentElement, { childList: true, subtree: true });
 setInterval(onNav, 1500);
 window.addEventListener('popstate', onNav);
 
-export type { ListEntry };

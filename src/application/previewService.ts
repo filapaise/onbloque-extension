@@ -1,22 +1,18 @@
 import { buildPreview, countByStatus } from '../domain/preview.ts';
 import { entryKeys } from '../domain/handle.ts';
+import { describeError } from '../domain/errors.ts';
 import type { ListEntry, PreviewRow } from '../domain/types.ts';
 import type { PreviewSnapshot } from '../shared/messages.ts';
 import { loadStore } from '../infra/storage.ts';
-import { friendshipsLookup, verifyCredentials, type FetchFn } from '../infra/xClient.ts';
-import { makeTabFetch, readCsrfFromTab, requireXTab } from '../infra/tabFetch.ts';
+import { lookupRelationships } from '../infra/xRelations.ts';
+import type { SelfAccount } from '../infra/xClient.ts';
+import { getSelf, openXSession } from './session.ts';
+import { idCacheFromRelations, saveIdCache } from '../infra/idCache.ts';
 
-async function resolveTabFetch(): Promise<{ fetchFn: FetchFn; csrf: string; tabId: number }> {
-  const tabId = await requireXTab();
-  const csrf = await readCsrfFromTab(tabId);
-  if (!csrf) {
-    throw new Error(
-      'Session x.com introuvable (cookie CSRF ct0). Ouvrez x.com, reconnectez-vous, puis réessayez.',
-    );
-  }
-  return { fetchFn: makeTabFetch(tabId), csrf, tabId };
-}
-
+/**
+ * Aperçu : identité + relations obligatoires. Au moindre doute → aucun compte
+ * coché et la raison exacte est renvoyée (fail-closed).
+ */
 export async function buildPreviewSnapshot(
   entries?: ListEntry[],
   excludeFollowingByDefault = true,
@@ -24,51 +20,21 @@ export async function buildPreviewSnapshot(
 ): Promise<PreviewSnapshot> {
   const store = await loadStore();
   const listEntries = entries ?? store.list?.entries ?? [];
-  let self: { id?: string; handle?: string } | null = null;
-  let relationships = new Map();
-  let sessionOk = false;
-  let relationsOk = false;
-  let abortReason: string | null = null;
-
+  let self: SelfAccount | null = null;
+  let relations;
   try {
-    const { fetchFn, csrf, tabId } = await resolveTabFetch();
-    const { collectPageScriptUrls } = await import('../infra/tabFetch.ts');
-    const scriptUrls = await collectPageScriptUrls(tabId);
-    self = await verifyCredentials(fetchFn, csrf, { tabId, scriptUrls });
-    sessionOk = !!self;
-    if (!self) {
-      abortReason =
-        'Impossible de déterminer votre compte X (twid / settings / Viewer). Rouvrez un onglet x.com connecté puis réessayez.';
-    } else {
-      try {
-        relationships = await friendshipsLookup(fetchFn, csrf, listEntries);
-        relationsOk = true;
-      } catch (lookupErr) {
-        // Fail closed on relationship lookup (H3) — but message clearer
-        abortReason =
-          'Impossible de vérifier les comptes que vous suivez (friendships/lookup). Aperçu annulé pour éviter de bloquer un compte suivi. Réessayez dans un moment.';
-        relationsOk = false;
-        throw lookupErr;
-      }
-    }
+    const session = await openXSession();
+    self = await getSelf(session);
+    relations = await lookupRelationships(session.ctx, listEntries, self, { withFollowers: true, verifyIds: true });
   } catch (e) {
-    if (!abortReason) {
-      abortReason =
-        (e as Error).message ||
-        'Impossible de vérifier les relations (suivis / vous). Aperçu annulé pour votre sécurité.';
-    }
-    sessionOk = false;
-    relationsOk = false;
-  }
-
-  if (abortReason || !relationsOk || !self) {
     return {
       rows: [],
       counts: { selected: 0 },
       self,
-      sessionOk,
-      abortReason: abortReason ?? 'Relations indisponibles — aperçu annulé (garde-fou).',
+      sessionOk: !!self,
+      abortReason: `Aperçu annulé : ${describeError(e)}`,
       relationsOk: false,
+      notes: [],
     };
   }
 
@@ -77,14 +43,24 @@ export async function buildPreviewSnapshot(
     for (const k of entryKeys(b)) already.add(k);
   }
 
+  // Alimente le cache @ → id : la file n'aura pas à re-résoudre ces comptes.
+  if (relations.source === 'friendships') {
+    try {
+      await saveIdCache(idCacheFromRelations(listEntries, relations.map));
+    } catch {
+      /* cache facultatif */
+    }
+  }
+
   const rows: PreviewRow[] = buildPreview({
     entries: listEntries,
     whitelist: store.whitelist,
     self,
-    relationships,
+    relationships: relations.map,
     alreadyBlocked: already,
     excludeFollowingByDefault,
     relationsIncomplete: false,
+    absentMeansNotFound: relations.source === 'friendships',
     precheckNone: !!opts.precheckNone,
     newlyAddedKeys: opts.newlyAddedKeys ? new Set(opts.newlyAddedKeys) : undefined,
   });
@@ -93,8 +69,9 @@ export async function buildPreviewSnapshot(
     rows,
     counts: countByStatus(rows),
     self,
-    sessionOk,
+    sessionOk: true,
     abortReason: null,
     relationsOk: true,
+    notes: relations.notes,
   };
 }

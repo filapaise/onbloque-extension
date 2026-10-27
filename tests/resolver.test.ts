@@ -1,58 +1,35 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractUserByScreenNameQueryId } from '../src/infra/queryIdDiscovery.ts';
 import { parseUserByScreenNameBody } from '../src/infra/xClient.ts';
 import { frenchError, isPauseWorthy, isSkippable } from '../src/domain/errors.ts';
 
-describe('extractUserByScreenNameQueryId', () => {
-  it('finds queryId before operationName', () => {
-    const id = extractUserByScreenNameQueryId(
-      'foo queryId:"AMIBMjtxEEATh4z8V9GtRg",operationName:"UserByScreenName" bar',
-    );
-    assert.equal(id, 'AMIBMjtxEEATh4z8V9GtRg');
-  });
-  it('finds graphql path form', () => {
-    const id = extractUserByScreenNameQueryId(
-      'https://x.com/i/api/graphql/AbCdEfGhIjKlMnOp/UserByScreenName?x=1',
-    );
-    assert.equal(id, 'AbCdEfGhIjKlMnOp');
-  });
-  it('returns null when absent', () => {
-    assert.equal(extractUserByScreenNameQueryId('nothing here'), null);
-  });
-});
-
 describe('parseUserByScreenNameBody', () => {
-  it('ok with rest_id', () => {
-    const r = parseUserByScreenNameBody(
-      JSON.stringify({
-        data: {
-          user: {
-            result: {
-              __typename: 'User',
-              rest_id: '42',
-              legacy: { screen_name: 'Foo' },
-            },
-          },
-        },
-      }),
-    );
-    assert.deepEqual(r, { status: 'ok', id: '42', handle: 'Foo' });
+  it('ok with rest_id (legacy schema)', () => {
+    const r = parseUserByScreenNameBody({
+      data: { user: { result: { __typename: 'User', rest_id: '42', legacy: { screen_name: 'Foo' } } } },
+    });
+    assert.equal(r.status, 'ok');
+    assert.equal(r.status === 'ok' && r.user.id, '42');
+    assert.equal(r.status === 'ok' && r.user.handle, 'Foo');
   });
-  it('not-found when user null', () => {
-    const r = parseUserByScreenNameBody(JSON.stringify({ data: { user: null } }));
-    assert.equal(r.status, 'not-found');
+  it('ok with core.screen_name (2025+ schema)', () => {
+    const r = parseUserByScreenNameBody({
+      data: { user: { result: { __typename: 'User', rest_id: '7', core: { screen_name: 'Bar' } } } },
+    });
+    assert.equal(r.status === 'ok' && r.user.handle, 'Bar');
+  });
+  it('not-found when user null or data empty', () => {
+    assert.equal(parseUserByScreenNameBody({ data: { user: null } }).status, 'not-found');
+    assert.equal(parseUserByScreenNameBody({ data: {} }).status, 'not-found');
+    assert.equal(parseUserByScreenNameBody({ data: { user: {} } }).status, 'not-found');
   });
   it('suspended UserUnavailable', () => {
-    const r = parseUserByScreenNameBody(
-      JSON.stringify({
-        data: { user: { result: { __typename: 'UserUnavailable' } } },
-      }),
-    );
+    const r = parseUserByScreenNameBody({ data: { user: { result: { __typename: 'UserUnavailable' } } } });
     assert.equal(r.status, 'suspended');
   });
-  it('failed on garbage', () => {
-    assert.equal(parseUserByScreenNameBody('nope').status, 'failed');
+  it('throws resolver-failed on garbage (fail closed)', () => {
+    assert.throws(() => parseUserByScreenNameBody('nope'), /UserByScreenName/);
+    assert.throws(() => parseUserByScreenNameBody({ errors: [{ message: 'x' }] }), /UserByScreenName/);
   });
 });
 
@@ -66,7 +43,7 @@ describe('error classification', () => {
   });
   it('french messages', () => {
     assert.match(frenchError('not-found'), /introuvable/i);
-    assert.match(frenchError('resolver-failed'), /résoudre|pause/i);
+    assert.match(frenchError('resolver-failed'), /identifiant/i);
     assert.match(frenchError('network', 'dans 2 min'), /2 min/);
     assert.doesNotMatch(frenchError('not-found'), /not-found/);
   });

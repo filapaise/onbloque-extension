@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OnBloque",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "description": "Bloquer sur X une liste de comptes (#OnBloquelExtremeDroite) : aperçu, comptes protégés, plafond journalier.",
   "permissions": [
     "storage",

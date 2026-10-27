@@ -31,7 +31,7 @@ export function assertSenderAllowed(msg: Msg, sender: chrome.runtime.MessageSend
     throw new Error('Expéditeur non autorisé.');
   }
   if (isContentScript(sender)) {
-    if (!CONTENT_ALLOWED.has(msg.type)) {
+    if (!isContentAllowed(msg.type)) {
       throw new Error(`Message ${msg.type} interdit depuis le content script.`);
     }
     return;
@@ -98,4 +98,24 @@ export function filterAgainstWhitelist(
     const keys = [it.id ? `id:${it.id}` : '', it.handle ? `h:${it.handle.toLowerCase()}` : ''].filter(Boolean);
     return !keys.some((k) => banned.has(k));
   });
+}
+
+/**
+ * Comptes à mettre dans l'aperçu ouvert depuis x.com.
+ * - mode « list » : la liste stockée (le content script n'a aucun accès en lecture) ;
+ * - sinon : les comptes collectés sur la page, nettoyés et plafonnés.
+ */
+export function previewEntriesFor(
+  msg: { mode?: 'list' | 'entries'; entries?: unknown },
+  stored: BlockList | null,
+): ListEntry[] {
+  if (msg.mode === 'list') {
+    if (!stored || stored.entries.length === 0) {
+      throw new Error('Aucune liste chargée. Ouvrez les options de l’extension pour en importer une.');
+    }
+    return stored.entries;
+  }
+  const entries = sanitizeEntries(msg.entries, 2000);
+  if (!entries.length) throw new Error('Aucun compte valide à prévisualiser.');
+  return entries;
 }

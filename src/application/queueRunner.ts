@@ -1,5 +1,4 @@
 import {
-  applyBackoff,
   clearBackoff,
   dequeueHead,
   hitCap,
@@ -8,25 +7,33 @@ import {
   remainingCap,
   rollDay,
 } from '../domain/queue.ts';
-import { frenchError, isPauseWorthy, isSkippable, XApiError } from '../domain/errors.ts';
-import { entryKey, entryKeys } from '../domain/handle.ts';
+import {
+  describeError,
+  fmtClock,
+  frenchError,
+  isAuthLoss,
+  isSkippable,
+  isTransient,
+  rateLimitResumeAt,
+  TRANSIENT_BACKOFF_MS,
+  XApiError,
+} from '../domain/errors.ts';
+import { recordDiag } from '../infra/diagnostics.ts';
+import { batchResolveHandles, cacheGet, loadIdCache, pickBatch, saveIdCache } from '../infra/idCache.ts';
+import { entryKeys } from '../domain/handle.ts';
 import { pacePause } from '../domain/presets.ts';
-import type { QueueItem, RunState } from '../domain/types.ts';
+import type { ListEntry, QueueItem, RunState } from '../domain/types.ts';
 import { appendLog, loadStore, pushBlocked, savePartial } from '../infra/storage.ts';
 import {
   blockUser,
-  sanitizeErrorBody,
+  resolveUserId,
   unblockUser,
-  verifyCredentials,
-  type FetchFn,
+  type ResolveResult,
+  type SelfAccount,
+  type XContext,
 } from '../infra/xClient.ts';
-import { checkRelationship } from '../infra/followingGuard.ts';
-import {
-  collectPageScriptUrls,
-  makeTabFetch,
-  readCsrfFromTab,
-  requireXTab,
-} from '../infra/tabFetch.ts';
+import { lookupRelationships } from '../infra/xRelations.ts';
+import { getSelf, openXSession } from './session.ts';
 
 const ALARM_TICK = 'onbloque-tick';
 const ALARM_DAILY = 'onbloque-daily-list';
@@ -34,29 +41,6 @@ const ALARM_RESUME = 'onbloque-resume';
 
 let tickTimer: ReturnType<typeof setTimeout> | null = null;
 let runningLock = false;
-let cachedSelf: { id: string; handle: string; at: number } | null = null;
-const SELF_TTL = 10 * 60_000;
-
-async function tabContext(): Promise<{ fetchFn: FetchFn; csrf: string; tabId: number }> {
-  const tabId = await requireXTab();
-  const csrf = await readCsrfFromTab(tabId);
-  if (!csrf) throw new XApiError('not-logged-in', 0, 'not-logged-in');
-  return { fetchFn: makeTabFetch(tabId), csrf, tabId };
-}
-
-export async function getCachedSelf(
-  fetchFn?: FetchFn,
-  csrf?: string,
-  opts: { tabId?: number; scriptUrls?: string[] } = {},
-): Promise<{ id: string; handle: string } | null> {
-  if (cachedSelf && Date.now() - cachedSelf.at < SELF_TTL) {
-    return { id: cachedSelf.id, handle: cachedSelf.handle };
-  }
-  if (!fetchFn || !csrf) return cachedSelf ? { id: cachedSelf.id, handle: cachedSelf.handle } : null;
-  const self = await verifyCredentials(fetchFn, csrf, opts);
-  if (self) cachedSelf = { ...self, at: Date.now() };
-  return self;
-}
 
 export async function ensureAlarms(autoRefresh: boolean): Promise<void> {
   await chrome.alarms.clear(ALARM_TICK);
@@ -82,8 +66,11 @@ export async function scheduleResume(at: number): Promise<void> {
 export async function startQueue(): Promise<void> {
   const store = await loadStore();
   let run = rollDay(store.run);
-  run = { ...run, running: true, lastError: null };
-  if (!(run.resumeAt && run.resumeAt > Date.now() && run.resumeReason === 'cap')) {
+  // Plafond du jour et limite X : on ne force jamais avant l'heure de reprise.
+  const hold =
+    run.resumeAt && run.resumeAt > Date.now() && (run.resumeReason === 'cap' || run.resumeReason === 'rate-limit');
+  run = { ...run, running: true, lastError: hold ? run.lastError : null };
+  if (!hold) {
     run = { ...run, resumeAt: null, resumeReason: null, backoffLevel: 0 };
   }
   await savePartial({ run });
@@ -92,7 +79,9 @@ export async function startQueue(): Promise<void> {
 
 export async function pauseQueue(): Promise<void> {
   const store = await loadStore();
-  await savePartial({ run: { ...store.run, running: false } });
+  // Pause manuelle : aucune reprise automatique programmée ne doit la contourner.
+  await savePartial({ run: { ...store.run, running: false, resumeAt: null, resumeReason: null } });
+  await chrome.alarms.clear(ALARM_RESUME);
   if (tickTimer) {
     clearTimeout(tickTimer);
     tickTimer = null;
@@ -117,43 +106,24 @@ function scheduleContinue(delayMs: number): void {
   }, delayMs);
 }
 
-async function safetySkip(
-  fetchFn: FetchFn,
-  csrf: string,
-  head: QueueItem,
-  storeWhitelist: Array<{ id?: string; handle?: string }>,
+/**
+ * Dernier garde-fou, sur le compte RÉSOLU (id confirmé par X) : vous-même,
+ * liste blanche, comptes que vous suivez. Relations indisponibles → throw
+ * (la file se met en pause, aucun blocage « à l'aveugle »).
+ */
+export async function guardTarget(
+  ctx: XContext,
+  target: { id: string; handle: string },
+  self: SelfAccount,
+  whitelist: ListEntry[],
 ): Promise<string | null> {
-  if (head.action !== 'block') return null;
-  const self = await getCachedSelf(fetchFn, csrf);
-  const keys = new Set(entryKeys(head));
-  if (self) {
-    for (const k of entryKeys(self)) {
-      if (keys.has(k)) return 'self';
-    }
-  }
-  for (const w of storeWhitelist) {
-    for (const k of entryKeys(w)) {
-      if (keys.has(k)) return 'whitelist';
-    }
-  }
-  try {
-    const rel = await checkRelationship(fetchFn, csrf, head, self?.id);
-    if (rel.source === 'unknown' && !rel.id && !rel.handle) {
-      // Could not verify — fail closed
-      throw new XApiError('resolver-failed', 0, 'resolver-failed');
-    }
-    if (rel.following) return 'following';
-    if (self && rel.id && rel.id === self.id) return 'self';
-    for (const w of storeWhitelist) {
-      if (w.id && rel.id === w.id) return 'whitelist';
-      if (w.handle && rel.handle && w.handle.toLowerCase() === rel.handle.toLowerCase()) return 'whitelist';
-    }
-    if (rel.id) keys.add(`id:${rel.id}`);
-    if (rel.handle) keys.add(`h:${rel.handle.toLowerCase()}`);
-  } catch (e) {
-    if (e instanceof XApiError) throw e;
-    throw new XApiError('resolver-failed', 0, 'resolver-failed');
-  }
+  const keys = new Set(entryKeys(target));
+  if (entryKeys(self).some((k) => keys.has(k))) return 'vous';
+  if (whitelist.some((w) => entryKeys(w).some((k) => keys.has(k)))) return 'liste blanche';
+  const { map } = await lookupRelationships(ctx, [target], self, { withFollowers: false, verifyIds: false });
+  const rel = map.get(`id:${target.id}`) ?? map.get(`h:${target.handle.toLowerCase()}`);
+  if (!rel) throw new XApiError('relation absente', 0, 'guard-unavailable');
+  if (rel.following) return 'vous le suivez';
   return null;
 }
 
@@ -201,31 +171,29 @@ async function processNextInner(): Promise<void> {
   }
 
   try {
-    const { fetchFn, csrf, tabId } = await tabContext();
-    const scriptUrls = await collectPageScriptUrls(tabId);
-    await getCachedSelf(fetchFn, csrf, { tabId, scriptUrls });
+    const session = await openXSession({ background: true });
+    const { ctx } = session;
+    if (session.tabOpened || session.tabReloaded) {
+      await appendLog({
+        at: Date.now(),
+        level: 'info',
+        message: session.tabOpened
+          ? 'Aucun onglet x.com ouvert : un onglet x.com a été ouvert en arrière-plan pour continuer.'
+          : 'Onglet x.com déchargé par Chrome : rechargé pour continuer.',
+      });
+    }
+    // Identité exigée avant tout blocage (fail-closed si inconnue).
+    const self = head.action === 'block' ? await getSelf(session) : null;
 
-    if (head.action === 'block') {
-      const reason = await safetySkip(fetchFn, csrf, head, store.whitelist);
-      if (reason) {
-        run = { ...run, totalSkipped: run.totalSkipped + 1, lastError: `Ignoré (${reason})` };
-        await savePartial({ queue: rest, run });
-        await appendLog({
-          at: Date.now(),
-          level: 'info',
-          handle: head.handle,
-          id: head.id,
-          message: `Ignoré avant blocage (${reason}).`,
-        });
-        scheduleContinue(randomDelayMs(store.settings));
-        return;
-      }
+    const target = await resolveHead(ctx, head, store.queue);
+
+    if (self) {
+      const reason = await guardTarget(ctx, target, self, store.whitelist);
+      if (reason) throw new XApiError(reason, 0, 'protected');
     }
 
     const result =
-      head.action === 'unblock'
-        ? await unblockUser(fetchFn, csrf, head, { scriptUrls })
-        : await blockUser(fetchFn, csrf, head, { scriptUrls });
+      head.action === 'unblock' ? await unblockUser(ctx, target) : await blockUser(ctx, target);
 
     run = clearBackoff({
       ...run,
@@ -235,20 +203,16 @@ async function processNextInner(): Promise<void> {
       lastActionAt: Date.now(),
     });
 
-    const keys = entryKeys({ id: result.id ?? head.id, handle: result.handle ?? head.handle });
     if (head.action === 'block') {
-      await pushBlocked(
-        { id: result.id ?? head.id, handle: result.handle ?? head.handle, at: Date.now() },
-        keys,
-      );
+      await pushBlocked({ id: result.id, handle: result.handle, at: Date.now() }, entryKeys(result));
     }
 
     await savePartial({ queue: rest, run });
     await appendLog({
       at: Date.now(),
       level: 'info',
-      handle: result.handle ?? head.handle,
-      id: result.id ?? head.id,
+      handle: result.handle,
+      id: result.id,
       message: head.action === 'unblock' ? 'Débloqué' : 'Bloqué',
     });
 
@@ -266,95 +230,197 @@ async function processNextInner(): Promise<void> {
     scheduleContinue(delay);
     return;
   } catch (e) {
-    const err =
-      e instanceof XApiError
-        ? e
-        : new XApiError(String(e), 0, 'unknown', sanitizeErrorBody(String(e)));
-
-    if (err.code === 'rate-limit') {
-      // Stop for a long time after first 429 (not 30s resume)
-      const until = Date.now() + 60 * 60_000;
-      run = {
-        ...applyBackoff(run),
-        resumeAt: until,
-        resumeReason: 'rate-limit',
-        running: false,
-        lastError: frenchError('rate-limit', 'dans 1 h'),
-      };
-      await savePartial({ queue: store.queue, run });
-      await scheduleResume(until);
-      await appendLog({
-        at: Date.now(),
-        level: 'warn',
-        handle: head.handle,
-        id: head.id,
-        message: frenchError('rate-limit', 'dans 1 h'),
-      });
-      return;
-    }
-
-    if (isPauseWorthy(err.code)) {
-      const msg = frenchError(err.code);
-      await savePartial({
-        queue: store.queue,
-        run: { ...run, running: false, lastError: msg },
-      });
-      await appendLog({
-        at: Date.now(),
-        level: 'error',
-        handle: head.handle,
-        id: head.id,
-        message: msg,
-      });
-      return;
-    }
-
-    if (isSkippable(err.code) || err.status === 404 || err.message === 'mismatch') {
-      const msg =
-        err.message === 'mismatch'
-          ? 'Incohérence id/@ — ignoré'
-          : frenchError(err.code === 'suspended' ? 'suspended' : 'not-found');
-      const skipped = run.totalSkipped + 1;
-      run = { ...run, totalSkipped: skipped, lastError: `${msg} (${skipped} ignoré${skipped > 1 ? 's' : ''})` };
-      await savePartial({ queue: rest, run });
-      await appendLog({
-        at: Date.now(),
-        level: 'warn',
-        handle: head.handle,
-        id: head.id,
-        message: msg,
-      });
-      scheduleContinue(randomDelayMs(store.settings));
-      return;
-    }
-
-    // Unknown / 5xx / forbidden → backoff
-    const attempts = head.attempts + 1;
-    const item: QueueItem = { ...head, attempts };
-    run = applyBackoff(run);
-    const msg = frenchError(err.code === 'forbidden' ? 'forbidden' : 'network', 'bientôt');
-    if (attempts >= 3) {
-      run = clearBackoff({
-        ...run,
-        totalSkipped: run.totalSkipped + 1,
-        lastError: msg,
-        running: true,
-      });
-      await savePartial({ queue: rest, run });
-    } else {
-      await savePartial({
-        queue: [item, ...rest],
-        run: { ...run, lastError: msg },
-      });
-      await scheduleResume(run.resumeAt ?? Date.now() + 60_000);
-    }
-    await appendLog({
-      at: Date.now(),
-      level: 'warn',
-      handle: head.handle,
-      id: head.id,
-      message: `${msg} (essai ${attempts}/3)`,
+    const err = e instanceof XApiError ? e : new XApiError(describeError(e), 0, 'unknown');
+    const decision = decideOnError(err, run, head.attempts);
+    await recordDiag({
+      step: decision.kind,
+      endpoint: err.message,
+      status: err.status || undefined,
+      code: err.code,
+      note: decision.kind === 'skip' ? undefined : err.body,
     });
-    if (attempts >= 3) scheduleContinue(randomDelayMs(store.settings));
+
+    switch (decision.kind) {
+      case 'rate-limit':
+      case 'retry-later': {
+        run = { ...run, ...decision.run };
+        await savePartial({ queue: store.queue, run });
+        await scheduleResume(decision.resumeAt);
+        await appendLog({ at: Date.now(), level: 'warn', handle: head.handle, id: head.id, message: decision.message });
+        return;
+      }
+      case 'pause': {
+        run = { ...run, ...decision.run };
+        await savePartial({ queue: store.queue, run });
+        await appendLog({ at: Date.now(), level: 'error', handle: head.handle, id: head.id, message: decision.message });
+        return;
+      }
+      case 'skip': {
+        const skipped = run.totalSkipped + 1;
+        run = clearBackoff({
+          ...run,
+          totalSkipped: skipped,
+          lastError: `${decision.message} (${skipped} ignoré${skipped > 1 ? 's' : ''})`,
+        });
+        await savePartial({ queue: rest, run });
+        await appendLog({ at: Date.now(), level: 'warn', handle: head.handle, id: head.id, message: decision.message });
+        scheduleContinue(randomDelayMs(store.settings));
+        return;
+      }
+      case 'retry-item': {
+        run = { ...run, ...decision.run };
+        await savePartial({ queue: [{ ...head, attempts: head.attempts + 1 }, ...rest], run });
+        await scheduleResume(decision.resumeAt);
+        await appendLog({
+          at: Date.now(),
+          level: 'warn',
+          handle: head.handle,
+          id: head.id,
+          message: `${decision.message} (essai ${head.attempts + 1}/3)`,
+        });
+        return;
+      }
+    }
   }
+}
+
+/**
+ * Résolution de la tête de file : id déjà connu → vérifié par X ;
+ * sinon cache persistant @ → id, alimenté par paquets de 100 @ (une requête
+ * friendships/lookup pour toute la suite de la file). Un @ absent d'X est
+ * ignoré (skip), jamais une pause de toute la file.
+ */
+export async function resolveHead(
+  ctx: XContext,
+  head: QueueItem,
+  queue: QueueItem[],
+): Promise<{ id: string; handle: string }> {
+  let ref: { handle?: string; id?: string } = { handle: head.handle, id: head.id };
+  let fromCache = false;
+  let absentHint = false;
+  const key = head.handle?.toLowerCase();
+
+  if (!ref.id && ref.handle && key) {
+    const cache = await loadIdCache();
+    let entry = cacheGet(cache, key);
+    if (!entry) {
+      const batch = pickBatch(queue, cache);
+      const got = await batchResolveHandles(ctx, batch.length ? batch : [ref.handle]);
+      if (got) {
+        await saveIdCache(got);
+        entry = got[key] ?? null;
+        const absent = Object.values(got).filter((x) => x.s === 'absent').length;
+        if (batch.length > 1) {
+          await appendLog({
+            at: Date.now(),
+            level: 'info',
+            message: `Résolution groupée : ${batch.length} @ en une requête (${absent} absent${absent > 1 ? 's' : ''} de X).`,
+          });
+        }
+      }
+    }
+    if (entry?.s === 'ok') {
+      ref = { id: entry.id, handle: ref.handle };
+      fromCache = true;
+    } else if (entry?.s === 'absent') {
+      absentHint = true;
+    }
+  }
+
+  let resolved: ResolveResult;
+  try {
+    resolved = await resolveUserId(ctx, ref);
+    if (fromCache && !resolved.ok) {
+      // L'id en cache ne porte plus ce @ (renommé) : on repart du @ seul.
+      resolved = await resolveUserId(ctx, { handle: ref.handle });
+    }
+  } catch (e) {
+    // friendships/lookup a déjà dit « absent » : si la confirmation GraphQL
+    // échoue pour une raison technique, on ignore CE compte au lieu de tout arrêter.
+    if (
+      absentHint &&
+      e instanceof XApiError &&
+      e.code !== 'rate-limit' &&
+      !isAuthLoss(e.code)
+    ) {
+      resolved = { ok: false, reason: 'not-found' };
+    } else {
+      throw e;
+    }
+  }
+  if (!resolved.ok) {
+    if (key) await saveIdCache({ [key]: { s: 'absent', at: Date.now() } });
+    throw new XApiError(resolved.reason, 0, resolved.reason);
+  }
+  if (key) await saveIdCache({ [key]: { s: 'ok', id: resolved.id, h: resolved.handle, at: Date.now() } });
+  return { id: resolved.id, handle: resolved.handle };
+}
+
+export type ErrorDecision =
+  | { kind: 'rate-limit' | 'retry-later' | 'retry-item'; resumeAt: number; message: string; run: Partial<RunState> }
+  | { kind: 'pause'; message: string; run: Partial<RunState> }
+  | { kind: 'skip'; message: string };
+
+function where(err: XApiError): string {
+  const label = err.message && err.message !== err.code ? err.message : '';
+  const st = err.status ? `HTTP ${err.status}` : '';
+  return [label, st].filter(Boolean).join(' · ');
+}
+
+/** Politique d'erreur de la file (pure, testée). */
+export function decideOnError(err: XApiError, run: RunState, attempts: number, now = Date.now()): ErrorDecision {
+  if (err.code === 'rate-limit') {
+    const resumeAt = rateLimitResumeAt(err.resetAt, now);
+    const message = frenchError('rate-limit', fmtClock(resumeAt));
+    return {
+      kind: 'rate-limit',
+      resumeAt,
+      message,
+      run: { running: false, resumeAt, resumeReason: 'rate-limit', lastError: message },
+    };
+  }
+  if (isAuthLoss(err.code)) {
+    const message = describeError(err);
+    return { kind: 'pause', message, run: { running: false, resumeAt: null, resumeReason: null, lastError: message } };
+  }
+  if (isSkippable(err.code)) {
+    return { kind: 'skip', message: frenchError(err.code, err.code === 'protected' ? err.message : undefined) };
+  }
+  if (isTransient(err.code)) {
+    const level = run.backoffLevel;
+    const base =
+      err.code === 'network'
+        ? `X ne répond pas${where(err) ? ` (${where(err)})` : ''}.`
+        : err.code === 'resolver-failed'
+          ? frenchError('resolver-failed', where(err) || undefined)
+          : describeError(err);
+    if (level < TRANSIENT_BACKOFF_MS.length) {
+      const resumeAt = now + TRANSIENT_BACKOFF_MS[level]!;
+      const message = `${base} Rien n’a été bloqué ; reprise automatique à ${fmtClock(resumeAt)}.`;
+      return {
+        kind: 'retry-later',
+        resumeAt,
+        message,
+        run: { running: false, resumeAt, resumeReason: 'error', backoffLevel: level + 1, lastError: message },
+      };
+    }
+    const message = `${base} File en pause après ${level} reprises automatiques — détails dans Options › Diagnostic.`;
+    return {
+      kind: 'pause',
+      message,
+      run: { running: false, resumeAt: null, resumeReason: null, backoffLevel: 0, lastError: message },
+    };
+  }
+  // 403 / 5xx / inconnu sur CE compte : 3 essais espacés puis ignoré.
+  if (attempts + 1 >= 3) {
+    return { kind: 'skip', message: `${err.code === 'forbidden' ? frenchError('forbidden') : describeError(err)} — ignoré après 3 essais` };
+  }
+  const resumeAt = now + Math.min(30 * 60_000, 60_000 * 2 ** attempts);
+  const message = `${err.code === 'forbidden' ? frenchError('forbidden') : describeError(err)} — nouvel essai à ${fmtClock(resumeAt)}`;
+  return {
+    kind: 'retry-item',
+    resumeAt,
+    message,
+    run: { running: false, resumeAt, resumeReason: 'error', lastError: message },
+  };
 }
