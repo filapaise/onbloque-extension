@@ -4,6 +4,7 @@ import type { PacePreset, Settings } from '../domain/types.ts';
 import { delayAdjustNote, describePace, parseDelayInput } from '../domain/presets.ts';
 import type { ListEntry } from '../domain/types.ts';
 import { sendMessage } from '../shared/messages.ts';
+import { describeThreshold, fmtFollowers, isPresetThreshold, MAX_MIN_FOLLOWERS, parseFollowerInput } from '../domain/followers.ts';
 import { fmtTime } from './format.ts';
 import { ensureListHostFromUi } from './listHost.ts';
 
@@ -78,11 +79,70 @@ for (const id of ['delay-min', 'delay-max']) {
   });
 }
 
+/* 1.3.0 — seuil d'abonnés */
+
+function renderThreshold(settings: Settings): void {
+  const min = settings.minFollowers ?? 0;
+  document.querySelectorAll<HTMLButtonElement>('#threshold .seg').forEach((btn) => {
+    const on = Number(btn.dataset.min) === min;
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('active', on);
+  });
+  const input = $('threshold-input') as HTMLInputElement;
+  if (document.activeElement !== input) input.value = min && !isPresetThreshold(min) ? fmtFollowers(min) : '';
+  $('threshold-desc').textContent = describeThreshold(min);
+}
+
+function thresholdMsg(text: string, err = false): void {
+  const el = $('threshold-msg');
+  el.hidden = !text;
+  el.textContent = text;
+  el.classList.toggle('err', err);
+}
+
+async function saveThreshold(minFollowers: number): Promise<void> {
+  const resp = await sendMessage({ type: 'SET_SETTINGS', settings: { minFollowers } });
+  if (!resp.ok || !('settings' in resp)) {
+    thresholdMsg(('error' in resp ? resp.error : null) || 'Échec', true);
+    return;
+  }
+  renderThreshold(resp.settings);
+  thresholdMsg('');
+  toast();
+}
+
+document.querySelectorAll<HTMLButtonElement>('#threshold .seg').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    ($('threshold-input') as HTMLInputElement).value = '';
+    void saveThreshold(Number(btn.dataset.min) || 0);
+  });
+});
+
+function saveCustomThreshold(): void {
+  const raw = ($('threshold-input') as HTMLInputElement).value;
+  const n = parseFollowerInput(raw);
+  if (!Number.isFinite(n) || n < 0) {
+    thresholdMsg('Entrez un nombre d’abonnés, ex. 25 000 ou 25k.', true);
+    return;
+  }
+  if (n > MAX_MIN_FOLLOWERS) {
+    thresholdMsg(`Maximum ${fmtFollowers(MAX_MIN_FOLLOWERS)}.`, true);
+    return;
+  }
+  void saveThreshold(n);
+}
+
+$('btn-threshold-save').addEventListener('click', saveCustomThreshold);
+$('threshold-input').addEventListener('keydown', (e) => {
+  if ((e as KeyboardEvent).key === 'Enter') saveCustomThreshold();
+});
+
 async function load(): Promise<void> {
   const st = await sendMessage({ type: 'GET_STATUS' });
   if (!st.ok || !('status' in st)) return;
   const s = st.status;
   renderPace(s.settings);
+  renderThreshold(s.settings);
   ($('list-url') as HTMLInputElement).value = s.settings.listUrl || '';
 
   if (s.list) {
@@ -95,7 +155,9 @@ async function load(): Promise<void> {
 
   renderWhitelist(s.whitelist);
   $('history-line').textContent =
-    `${s.run.totalDone} bloqués · ${s.run.totalSkipped} ignorés · ${s.blockedByExt.length} par l’extension`;
+    `${s.run.totalDone} bloqués · ${s.run.totalSkipped} ignorés` +
+    (s.run.totalSmall ? ` · ${s.run.totalSmall} petits comptes passés` : '') +
+    ` · ${s.blockedByExt.length} par l’extension`;
 }
 
 function renderWhitelist(list: ListEntry[]): void {

@@ -1,3 +1,4 @@
+import { fmtFollowers } from '../domain/followers.ts';
 import { sendMessage } from '../shared/messages.ts';
 import type { ListEntry, PreviewRow } from '../domain/types.ts';
 import { clear, el } from './dom.ts';
@@ -219,4 +220,14 @@ $('btn-whitelist').addEventListener('click', async () => {
 void (async () => {
   await loadFromToken();
   await refresh();
+})();
+
+/* 1.3.0 — rappel du seuil d'abonnés : les cochés sous le seuil seront passés, pas bloqués. */
+void (async () => {
+  const resp = await sendMessage({ type: 'GET_SETTINGS' });
+  const min = resp.ok && 'settings' in resp ? resp.settings.minFollowers ?? 0 : 0;
+  const note = document.getElementById('threshold-note');
+  if (!note || !min) return;
+  note.hidden = false;
+  note.textContent = `Seuil actif : seuls les comptes à ${fmtFollowers(min)} abonnés ou plus seront bloqués, les autres cochés seront passés. Modifiable dans Options.`;
 })();

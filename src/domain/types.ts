@@ -41,6 +41,12 @@ export interface Settings {
   /** true : délais min/max choisis dans « Réglages avancés » (sinon ceux du preset). */
   customDelay?: boolean;
   transport: 'auto' | 'tab' | 'direct';
+  /**
+   * 1.3.0 — ne bloquer que les comptes avec au moins N abonnés (0 = désactivé,
+   * toute la liste est bloquée). Lu à chaque compte traité : un changement en
+   * cours de file s'applique dès le compte suivant.
+   */
+  minFollowers?: number;
 }
 
 export interface RunState {
@@ -64,6 +70,9 @@ export interface RunState {
   batchSkipped?: number;
   /** Début du lot en cours (persisté) : permet de recompter le lot après un rechargement. */
   batchStartedAt?: number | null;
+  /** 1.3.0 — comptes passés car sous le seuil d'abonnés (total et lot en cours). */
+  totalSmall?: number;
+  batchSmall?: number;
 }
 
 export interface BlockedRecord {
@@ -121,6 +130,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxDelaySec: 45,
   customDelay: false,
   transport: 'tab',
+  minFollowers: 0,
 };
 
 export const MAX_DAILY_CAP = 500;

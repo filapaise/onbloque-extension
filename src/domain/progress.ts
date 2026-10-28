@@ -23,6 +23,8 @@ export interface Progress {
   remaining: number;
   done: number;
   skipped: number;
+  /** 1.3.0 — passés car sous le seuil d'abonnés (comptés à part des « ignorés »). */
+  small: number;
   total: number;
   /** 0…1 */
   pct: number;
@@ -85,13 +87,15 @@ export function computeProgress(run: RunState, queueLength: number, settings: Se
   const remaining = nn(queueLength);
   const done = nn(run.batchDone);
   const skipped = nn(run.batchSkipped);
-  const total = done + skipped + remaining;
-  const pct = total > 0 ? (done + skipped) / total : 0;
+  const small = nn(run.batchSmall);
+  const handled = done + skipped + small;
+  const total = handled + remaining;
+  const pct = total > 0 ? handled / total : 0;
   const resumeAt = run.resumeAt && run.resumeAt > now ? run.resumeAt : null;
   const lastBlocked = run.lastBlocked && nn(run.lastBlocked.at) ? { handle: run.lastBlocked.handle, at: run.lastBlocked.at } : null;
 
   let state: ProgressState;
-  if (remaining === 0) state = done + skipped > 0 ? 'done' : 'idle';
+  if (remaining === 0) state = handled > 0 ? 'done' : 'idle';
   else if (resumeAt && run.resumeReason === 'cap') state = 'cap';
   else if (resumeAt && run.resumeReason === 'rate-limit') state = 'rate-limit';
   else if (resumeAt && run.resumeReason === 'error') state = 'retry';
@@ -115,6 +119,7 @@ export function computeProgress(run: RunState, queueLength: number, settings: Se
     remaining,
     done,
     skipped,
+    small,
     total,
     pct,
     nextAt,
@@ -192,6 +197,14 @@ export function ringFraction(pct: number): number {
   return Math.min(1, Math.max(0.06, pct));
 }
 
+/** « 12 / 80 bloqués · 3 ignorés · 40 petits comptes » (popup). */
+export function countLine(p: Pick<Progress, 'done' | 'skipped' | 'small' | 'total'>): string {
+  const parts = [`${p.done} / ${p.total} bloqué${p.done > 1 ? 's' : ''}`];
+  if (p.skipped) parts.push(`${p.skipped} ignoré${p.skipped > 1 ? 's' : ''}`);
+  if (p.small) parts.push(`${p.small} petit${p.small > 1 ? 's' : ''} compte${p.small > 1 ? 's' : ''}`);
+  return parts.join(' · ');
+}
+
 export function countLabel(n: number): string {
   if (n <= 0) return '';
   if (n < 1000) return String(n);
@@ -244,7 +257,7 @@ export function badgeFor(p: Progress, opts: { withSeconds?: boolean } = {}): Bad
 }
 
 export function fabProgressOf(p: Progress): FabProgress {
-  return { state: p.state, remaining: p.remaining, done: p.done + p.skipped, total: p.total, pct: p.pct, nextAt: p.nextAt };
+  return { state: p.state, remaining: p.remaining, done: p.done + p.skipped + p.small, total: p.total, pct: p.pct, nextAt: p.nextAt };
 }
 
 const STATES: ReadonlySet<string> = new Set(['idle', 'done', 'running', 'cap', 'rate-limit', 'retry', 'error', 'paused']);

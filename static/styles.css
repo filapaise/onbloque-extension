@@ -91,7 +91,7 @@ a:hover { text-decoration: underline; }
 .muted { color: var(--muted); font-size: 12px; margin: 0; }
 
 .stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--gap);
   margin-bottom: 12px;
 }
 .stat {
@@ -296,3 +296,11 @@ details.pace-adv[open] summary { color: var(--text); }
 .live[data-state="error"] .pbar-fg { background: var(--danger); }
 .live[data-state="paused"] .pbar-fg { background: #8b98a5; }
 .live[data-state="done"] .pbar-fg { background: var(--ok); }
+
+/* 1.3.0 — seuil d'abonnés */
+.stat[hidden] { display: none; }
+.threshold-line { margin: -4px 0 12px; text-align: center; }
+.segmented.seg-5 { grid-template-columns: repeat(5, 1fr); }
+.threshold-custom { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.threshold-custom label { flex: 1 1 160px; }
+.threshold-custom input { width: 100%; }

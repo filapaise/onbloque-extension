@@ -133,6 +133,8 @@ export function initialRunState(): RunState {
     batchDone: 0,
     batchSkipped: 0,
     batchStartedAt: null,
+    totalSmall: 0,
+    batchSmall: 0,
   };
 }
 
@@ -150,6 +152,7 @@ function count(n: unknown): number {
 export function reconcileBatch(run: RunState, queue: QueueItem[], blocked: BlockedRecord[]): RunState {
   let batchDone = count(run.batchDone);
   const batchSkipped = count(run.batchSkipped);
+  const batchSmall = count(run.batchSmall);
   let startedAt = count(run.batchStartedAt) || null;
   if (!startedAt && queue.length) {
     let min = Infinity;
@@ -167,14 +170,15 @@ export function reconcileBatch(run: RunState, queue: QueueItem[], blocked: Block
   if (
     batchDone === run.batchDone &&
     batchSkipped === run.batchSkipped &&
+    batchSmall === (run.batchSmall ?? 0) &&
     (startedAt ?? null) === (run.batchStartedAt ?? null)
   ) {
     return run;
   }
-  return { ...run, batchDone, batchSkipped, batchStartedAt: startedAt };
+  return { ...run, batchDone, batchSkipped, batchSmall, batchStartedAt: startedAt };
 }
 
 /** Nouveau lot sur une file vide : compteurs à zéro, début daté. */
 export function startBatch(run: RunState, now = Date.now()): RunState {
-  return { ...run, batchDone: 0, batchSkipped: 0, batchStartedAt: now, nextActionAt: null };
+  return { ...run, batchDone: 0, batchSkipped: 0, batchSmall: 0, batchStartedAt: now, nextActionAt: null };
 }

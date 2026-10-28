@@ -11,6 +11,7 @@ import { DEFAULT_SETTINGS, MAX_DAILY_CAP } from '../domain/types.ts';
 import { applyCustomDelay, applyPace, nearestPace, sanitizeDelays } from '../domain/presets.ts';
 import type { PacePreset } from '../domain/types.ts';
 import { initialRunState, reconcileBatch } from '../domain/queue.ts';
+import { sanitizeMinFollowers } from '../domain/followers.ts';
 
 export interface StoreShape {
   settings: Settings;
@@ -83,6 +84,7 @@ export function normalizeSettings(s: Partial<Settings>): Settings {
     autoRefresh: false,
     transport: 'tab',
     dailyCap: Math.min(MAX_DAILY_CAP, withPace.dailyCap),
+    minFollowers: sanitizeMinFollowers(s.minFollowers) ?? 0,
   };
 }
 
@@ -96,6 +98,7 @@ function isPace(v: unknown): v is PacePreset {
  * - `customDelay: true` → min/max validés (15–900 s, max ≥ min), garbage ignoré
  *   (les valeurs précédentes restent) ;
  * - `customDelay: false` → retour aux délais du preset ;
+ * - `minFollowers` (1.3.0) : entier ≥ 0 (0 = désactivé) ; garbage ignoré ;
  * - plafond, délais, transport jamais copiés tels quels depuis le message.
  */
 export function mergeSettingsPatch(current: Settings, patch: Partial<Settings> | null | undefined): Settings {
@@ -113,6 +116,8 @@ export function mergeSettingsPatch(current: Settings, patch: Partial<Settings> |
   } else if (p.customDelay === false) {
     merged = applyPace(merged, merged.pace ?? nearestPace(merged));
   }
+  const minFollowers = sanitizeMinFollowers(p.minFollowers);
+  if (minFollowers !== null) merged.minFollowers = minFollowers;
   return normalizeSettings(merged);
 }
 

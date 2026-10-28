@@ -35,6 +35,7 @@ La liste de départ vient du répertoire Blockfacho ([onbloquelextremedroite.fun
   - Max : 500 par jour, un blocage toutes les 45 à 90 s, et une pause de 5 min tous les 20 (environ 11 h pour 500)
   - Dans **Réglages avancés** (sous les trois rythmes), tu peux choisir toi-même le délai minimum et maximum, 15 s au plus court. Plus c'est rapide, plus X risque de restreindre ton compte. Recliquer sur un rythme remet ses valeurs.
   - Le délai se compte d'un blocage au suivant. Quand Chrome met l'extension en veille, il peut ajouter quelques secondes.
+- **Tu peux viser seulement les gros comptes.** Avec le « Seuil d'abonnés » dans les réglages (1 000, 10 000, 50 000, 100 000 ou ton chiffre), les plus petits ne sont pas bloqués et sont comptés à part. Désactivé par défaut.
 - **Tu vois où ça en est.** Compte à rebours avant le prochain blocage, barre de progression, dernier compte bloqué, heure de fin estimée. Le badge sur l'icône montre combien il en reste.
 - **Ça tourne en fond.** Tu peux mettre en pause et reprendre quand tu veux. Garde juste un onglet x.com ouvert.
 - **Ça repart tout seul.** Si X ralentit, la file attend puis reprend. Un compte supprimé est juste ignoré.
@@ -42,7 +43,7 @@ La liste de départ vient du répertoire Blockfacho ([onbloquelextremedroite.fun
 
 ## Captures
 
-*Faites avec des données de démo (comptes fictifs).*
+*Le popup et les réglages sont de vraies captures. L'aperçu et la reprise automatique sont montrés avec des comptes fictifs.*
 
 ![Aperçu avant blocage](store/assets/screenshot-03-preview.png)
 *L'aperçu : tu choisis qui bloquer. Les comptes que tu suis, ceux déjà bloqués et ceux qui n'existent plus sont décochés.*
@@ -122,6 +123,7 @@ A Chrome extension to block far-right accounts on X from a shared list. #OnBloqu
 
 - You see the list first and pick who gets blocked.
 - People you follow, and people who follow you, are skipped.
+- Optional follower threshold: only block accounts with at least N followers (1k / 10k / 50k / 100k or custom). Off by default.
 - Daily cap and slow pace on purpose (Max: one block every 45–90 s, 5-minute pause every 20, 500 a day), so X doesn't flag your account. Advanced settings let you pick your own delay (15 s minimum).
 - Nothing leaves your browser. See [PRIVACY.md](PRIVACY.md).
 

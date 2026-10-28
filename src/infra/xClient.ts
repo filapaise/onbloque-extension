@@ -168,6 +168,8 @@ export type GqlUser =
       following?: boolean;
       followedBy?: boolean;
       blocking?: boolean;
+      /** 1.3.0 — nombre d'abonnés (legacy.followers_count), absent si X ne le donne pas. */
+      followers?: number;
     }
   | { kind: 'unavailable'; id?: string };
 
@@ -200,7 +202,14 @@ export function parseUserResult(raw: unknown): GqlUser | null {
     following: bool(rel.following) ?? bool(legacy.following),
     followedBy: bool(rel.followed_by) ?? bool(legacy.followed_by),
     blocking: bool(rel.blocking) ?? bool(legacy.blocking),
+    followers: followersOf(legacy, r),
   };
+}
+
+/** Nombre d'abonnés : `legacy.followers_count` (schéma 2024-2026), sinon `relationship_counts.followers`. */
+function followersOf(legacy: Obj, r: Obj): number | undefined {
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : undefined);
+  return n(legacy.followers_count) ?? n(obj(r.relationship_counts)?.followers);
 }
 
 export type UserLookup =

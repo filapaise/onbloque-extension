@@ -22,7 +22,7 @@ import { recordDiag } from '../infra/diagnostics.ts';
 import { batchResolveHandles, cacheGet, loadIdCache, pickBatch, saveIdCache } from '../infra/idCache.ts';
 import { entryKeys } from '../domain/handle.ts';
 import { pacePause } from '../domain/presets.ts';
-import type { ListEntry, QueueItem, RunState } from '../domain/types.ts';
+import type { ListEntry, QueueItem, RunState, Settings } from '../domain/types.ts';
 import { appendLog, loadStore, pushBlocked, savePartial } from '../infra/storage.ts';
 import {
   blockUser,
@@ -34,6 +34,8 @@ import {
 } from '../infra/xClient.ts';
 import { lookupRelationships } from '../infra/xRelations.ts';
 import { getSelf, openXSession } from './session.ts';
+import { isBelowThreshold, smallAccountMessage } from '../domain/followers.ts';
+import { followerEntryFor, knownId } from '../infra/followerCounts.ts';
 
 const ALARM_TICK = 'onbloque-tick';
 const ALARM_DAILY = 'onbloque-daily-list';
@@ -216,7 +218,30 @@ async function processNextInner(): Promise<void> {
     // Identité exigée avant tout blocage (fail-closed si inconnue).
     const self = head.action === 'block' ? await getSelf(session) : null;
 
+    // 1.3.0 — seuil d'abonnés (0 = désactivé). Relu à chaque compte : un changement
+    // de réglage en cours de file s'applique dès le compte suivant.
+    const minFollowers = head.action === 'block' ? store.settings.minFollowers ?? 0 : 0;
+    let gate: FollowerVerdict | null = null;
+    if (minFollowers > 0) {
+      // Id déjà connu (liste ou cache) : le compteur vient du cache ou d'UNE requête
+      // UsersByRestIds pour les 50 prochains comptes — un petit compte est passé
+      // sans aucune requête individuelle.
+      gate = await followerGate(ctx, head, store.queue, minFollowers, 'pre');
+      if (gate?.small) {
+        await skipSmall(gate, head, rest, run, store.settings, startedAt, SMALL_SKIP_GAP_MS);
+        return;
+      }
+    }
+
     const target = await resolveHead(ctx, head, store.queue);
+
+    if (minFollowers > 0 && !gate) {
+      gate = await followerGate(ctx, target, store.queue, minFollowers, 'post');
+      if (gate?.small) {
+        await skipSmall(gate, head, rest, run, store.settings, startedAt, randomDelayMs(store.settings));
+        return;
+      }
+    }
 
     if (self) {
       const reason = await guardTarget(ctx, target, self, store.whitelist);
@@ -324,6 +349,87 @@ async function processNextInner(): Promise<void> {
       }
     }
   }
+}
+
+/** Écart avant le compte suivant quand un petit compte est passé sans requête individuelle. */
+export const SMALL_SKIP_GAP_MS = 2_000;
+
+export interface FollowerVerdict {
+  small: boolean;
+  followers: number;
+  /** Une requête UsersByRestIds est partie pour obtenir ce compteur. */
+  fetched: boolean;
+}
+
+/**
+ * Seuil d'abonnés pour un compte.
+ * - `pre` (avant résolution) : id tiré de la liste ou du cache @ → id ; verdict
+ *   seulement si X a donné un compteur pour CE couple id ↔ @ ; sinon null
+ *   (la résolution normale décide : renommé, suspendu…). Un verdict « petit »
+ *   ne fait que PASSER le compte, jamais le bloquer.
+ * - `post` (id confirmé par X) : compteur obligatoire ; compte disparu → ignoré ;
+ *   compteur absent de la réponse → `resolver-failed` (reprise auto puis pause :
+ *   on ne bloque pas à l'aveugle un compte peut-être sous le seuil).
+ */
+export async function followerGate(
+  ctx: XContext,
+  ref: { handle?: string; id?: string },
+  queue: QueueItem[],
+  minFollowers: number,
+  mode: 'pre' | 'post',
+): Promise<FollowerVerdict | null> {
+  const idCache = await loadIdCache();
+  const id = mode === 'post' ? ref.id ?? null : knownId(ref, idCache);
+  if (!id) {
+    if (mode === 'pre') return null;
+    throw new XApiError('seuil d’abonnés : id inconnu', 0, 'resolver-failed');
+  }
+  const { entry, fetched } = await followerEntryFor(ctx, id, queue, idCache);
+  if (entry.s === 'ok') {
+    if (mode === 'pre' && ref.handle && entry.h.toLowerCase() !== ref.handle.toLowerCase()) return null;
+    return { small: isBelowThreshold(entry.n, minFollowers), followers: entry.n, fetched };
+  }
+  if (mode === 'pre') return null;
+  if (entry.s === 'gone') throw new XApiError('suspended', 0, 'suspended');
+  throw new XApiError('UsersByRestIds : nombre d’abonnés absent', 0, 'resolver-failed');
+}
+
+/**
+ * Compteurs après un petit compte passé (pure, testée) : compté à part
+ * (`totalSmall` / `batchSmall`), ni dans « bloqués », ni dans « ignorés »,
+ * ni dans le plafond du jour ; pas de recul (backoff) ; pas de lastError.
+ */
+export function applySmallSkip(run: RunState, restLength: number, startedAt: number, gapMs: number, now = Date.now()): RunState {
+  const nextAt = nextActionTime(startedAt, now, restLength ? gapMs : 0);
+  return clearBackoff({
+    ...run,
+    totalSmall: (run.totalSmall ?? 0) + 1,
+    batchSmall: (run.batchSmall ?? 0) + 1,
+    nextActionAt: restLength ? nextAt : null,
+  });
+}
+
+async function skipSmall(
+  gate: FollowerVerdict,
+  head: QueueItem,
+  rest: QueueItem[],
+  run: RunState,
+  settings: Settings,
+  startedAt: number,
+  gapMs: number,
+): Promise<void> {
+  const minFollowers = settings.minFollowers ?? 0;
+  const next = applySmallSkip(run, rest.length, startedAt, gapMs);
+  const nextAt = next.nextActionAt ?? Date.now();
+  await savePartial({ queue: rest, run: next });
+  await appendLog({
+    at: Date.now(),
+    level: 'info',
+    handle: head.handle,
+    id: head.id,
+    message: smallAccountMessage(gate.followers, minFollowers),
+  });
+  scheduleContinue(Math.max(500, nextAt - Date.now()));
 }
 
 /**

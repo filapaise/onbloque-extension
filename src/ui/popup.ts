@@ -1,7 +1,8 @@
 import { sendMessage, type StatusSnapshot } from '../shared/messages.ts';
 import { fmtRelative } from './format.ts';
 import { fmtClock } from '../domain/errors.ts';
-import { badgeFor, computeProgress, etaLine, fmtWhen, nextLine, SLOW_PACE_NOTE } from '../domain/progress.ts';
+import { badgeFor, computeProgress, countLine, etaLine, fmtWhen, nextLine, SLOW_PACE_NOTE } from '../domain/progress.ts';
+import { fmtFollowers } from '../domain/followers.ts';
 
 let lastStatus: StatusSnapshot | null = null;
 
@@ -73,10 +74,9 @@ function renderLive(): void {
     const fill = $('bar-fg');
     fill.style.width = `${pct}%`;
     // Toujours un bout de barre visible dès qu'au moins un compte est traité.
-    fill.classList.toggle('some', p.done + p.skipped > 0);
+    fill.classList.toggle('some', p.done + p.skipped + p.small > 0);
     $('bar').setAttribute('aria-valuenow', String(pct));
-    $('live-count').textContent =
-      `${p.done} / ${p.total} bloqué${p.done > 1 ? 's' : ''}` + (p.skipped ? ` · ${p.skipped} ignoré${p.skipped > 1 ? 's' : ''}` : '');
+    $('live-count').textContent = countLine(p);
     const last = $('live-last');
     if (p.lastBlocked?.handle) {
       last.hidden = false;
@@ -131,6 +131,14 @@ function render(s: StatusSnapshot): void {
   $('queue').textContent = String(s.queue.length);
   $('total-done').textContent = String(s.run.totalDone);
   $('total-skip').textContent = String(s.run.totalSkipped);
+  // 1.3.0 — petits comptes passés (seuil d'abonnés), affichés si le seuil sert ou a servi.
+  const minF = s.settings.minFollowers ?? 0;
+  const small = s.run.totalSmall ?? 0;
+  $('stat-small').hidden = !minF && !small;
+  $('total-small').textContent = String(small);
+  const th = $('threshold-line');
+  th.hidden = !minF;
+  th.textContent = minF ? `Seuil actif : seulement les comptes à ${fmtFollowers(minF)} abonnés ou plus.` : '';
   $('resume-line').textContent = resumeLabel(s);
 
   const err = $('error');

@@ -241,7 +241,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
     case 'CLEAR_QUEUE': {
       await pauseQueue();
       const store = await loadStore();
-      await savePartial({ queue: [], run: { ...store.run, batchDone: 0, batchSkipped: 0, batchStartedAt: null, nextActionAt: null } });
+      await savePartial({ queue: [], run: { ...store.run, batchDone: 0, batchSkipped: 0, batchSmall: 0, batchStartedAt: null, nextActionAt: null } });
       return { ok: true, added: 0, queueLength: 0 };
     }
     case 'UNDO_EXTENSION_BLOCKS': {
@@ -276,12 +276,14 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
           ...store.run,
           totalDone: 0,
           totalSkipped: 0,
+          totalSmall: 0,
           actionsToday: 0,
           lastError: null,
           lastActionAt: null,
           lastBlocked: null,
           batchDone: 0,
           batchSkipped: 0,
+          batchSmall: 0,
           batchStartedAt: store.queue.length ? Date.now() : null,
         },
       });

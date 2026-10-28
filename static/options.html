@@ -56,6 +56,42 @@
     </section>
 
     <section class="card">
+      <h1>Seuil d'abonnés</h1>
+      <p class="muted">Ne bloquer que les comptes avec au moins N abonnés. Les petits comptes sont passés, pas bloqués.</p>
+      <div class="segmented seg-5" role="radiogroup" aria-label="Seuil d'abonnés" id="threshold">
+        <button type="button" class="seg" data-min="0" aria-pressed="false">
+          <strong>Tous</strong>
+          <span>désactivé</span>
+        </button>
+        <button type="button" class="seg" data-min="1000" aria-pressed="false">
+          <strong>1 000</strong>
+          <span>et plus</span>
+        </button>
+        <button type="button" class="seg" data-min="10000" aria-pressed="false">
+          <strong>10 000</strong>
+          <span>et plus</span>
+        </button>
+        <button type="button" class="seg" data-min="50000" aria-pressed="false">
+          <strong>50 000</strong>
+          <span>et plus</span>
+        </button>
+        <button type="button" class="seg" data-min="100000" aria-pressed="false">
+          <strong>100 000</strong>
+          <span>et plus</span>
+        </button>
+      </div>
+      <div class="threshold-custom">
+        <label>Autre seuil
+          <input id="threshold-input" type="text" inputmode="numeric" placeholder="ex. 25 000 ou 25k" autocomplete="off" />
+        </label>
+        <button type="button" id="btn-threshold-save" class="btn ghost sm">Appliquer</button>
+      </div>
+      <p class="muted pace-desc" id="threshold-desc">—</p>
+      <p id="threshold-msg" class="msg" hidden></p>
+      <p class="fine">Changé pendant un blocage en cours : pris en compte dès le compte suivant. Les petits comptes déjà passés ne sont pas remis en file ; relancez l'aperçu pour les bloquer plus tard.</p>
+    </section>
+
+    <section class="card">
       <h1>Liste</h1>
       <div class="list-summary">
         <div>
