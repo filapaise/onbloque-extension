@@ -23,7 +23,7 @@ import { batchResolveHandles, cacheGet, loadIdCache, pickBatch, saveIdCache } fr
 import { entryKeys } from '../domain/handle.ts';
 import { pacePause } from '../domain/presets.ts';
 import type { ListEntry, QueueItem, RunState, Settings } from '../domain/types.ts';
-import { appendLog, loadStore, pushBlocked, savePartial } from '../infra/storage.ts';
+import { appendLog, loadStore, pushBlocked, recordBlockingObservations, savePartial } from '../infra/storage.ts';
 import {
   blockUser,
   resolveUserId,
@@ -273,6 +273,15 @@ async function processNextInner(): Promise<void> {
 
     if (head.action === 'block') {
       await pushBlocked({ id: result.id, handle: result.handle, at: doneAt }, entryKeys(result));
+    } else {
+      // 1.3.2 — débloqué : ne compte plus parmi les comptes déjà bloqués sur le compte.
+      try {
+        await recordBlockingObservations([{ id: result.id, handle: result.handle, blocking: false }], {
+          allowRemoval: true,
+        });
+      } catch {
+        /* suivi facultatif */
+      }
     }
 
     await savePartial({ queue: rest, run });

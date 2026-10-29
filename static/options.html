@@ -117,9 +117,13 @@
         <button type="button" id="btn-reset" class="btn danger sm">Réinitialiser</button>
       </div>
       <details class="blocked-list" id="bloques">
-        <summary id="blocked-summary">Comptes bloqués par l’extension (0)</summary>
-        <p class="fine" id="blocked-empty">Aucun compte bloqué par l’extension pour l’instant.</p>
-        <ol class="blocked-items" id="blocked-items"></ol>
+        <summary id="blocked-summary">Comptes bloqués (0)</summary>
+        <h2 class="blocked-group" id="blocked-ext-title">Bloqués par l’extension (0)</h2>
+        <p class="fine" id="blocked-ext-empty">Aucun compte bloqué par l’extension pour l’instant.</p>
+        <ol class="blocked-items" id="blocked-ext-items"></ol>
+        <h2 class="blocked-group" id="blocked-account-title">Déjà bloqués sur votre compte (0)</h2>
+        <p class="fine" id="blocked-account-empty">Aucun pour l’instant. Ouvrez l’aperçu de la liste (ou « Rafraîchir les relations ») : les comptes de la liste que X indique déjà bloqués s’ajoutent ici.</p>
+        <ol class="blocked-items" id="blocked-account-items"></ol>
       </details>
     </section>
 

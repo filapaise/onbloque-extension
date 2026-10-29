@@ -312,6 +312,13 @@ function wireDrag(root: HTMLElement, main: HTMLButtonElement): void {
   main.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !shownPos) return;
     start = { x: e.clientX, y: e.clientY, pos: shownPos, id: e.pointerId };
+    // Capture dès l'appui : un geste rapide qui sort du bouton avant le seuil continue
+    // d'envoyer pointermove / pointerup ici (sinon le glisser n'est jamais terminé).
+    try {
+      main.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   });
   main.addEventListener('pointermove', (e) => {
     if (!start || e.pointerId !== start.id) return;
@@ -341,6 +348,9 @@ function wireDrag(root: HTMLElement, main: HTMLButtonElement): void {
     root.classList.remove('dragging');
     const dropped = shownPos;
     if (dropped) {
+      // Nouvelle base tout de suite : un relayout (minuteur 1,5 s, resize) pendant
+      // l'enregistrement ne doit pas ramener le bouton à l'ancienne place.
+      basePos = dropped;
       void savePosition(storageArea(), dropped, viewport()).then((saved) => {
         basePos = saved;
         relayout(root);
@@ -349,6 +359,8 @@ function wireDrag(root: HTMLElement, main: HTMLButtonElement): void {
   };
   main.addEventListener('pointerup', end);
   main.addEventListener('pointercancel', end);
+  // Capture perdue sans pointerup (élément retiré, fenêtre quittée…) : on termine quand même.
+  main.addEventListener('lostpointercapture', end);
   // Un glisser ne doit pas ouvrir le menu.
   main.addEventListener(
     'click',

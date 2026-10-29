@@ -113,6 +113,7 @@ a:hover { text-decoration: underline; }
 details.blocked-list { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
 details.blocked-list summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
 details.blocked-list[open] summary { color: var(--text); }
+details.blocked-list h2.blocked-group { font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; }
 .blocked-items { list-style: none; margin: 8px 0 0; padding: 0; max-height: 320px; overflow-y: auto; }
 .blocked-items li {
   display: flex; justify-content: space-between; gap: 8px;

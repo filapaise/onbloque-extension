@@ -3,7 +3,7 @@ import { fmtRelative } from './format.ts';
 import { fmtClock } from '../domain/errors.ts';
 import { badgeFor, computeProgress, countLine, etaLine, fmtWhen, nextLine, SLOW_PACE_NOTE } from '../domain/progress.ts';
 import { fmtFollowers } from '../domain/followers.ts';
-import { batchCaption, totalBlocked, totalBlockedLine } from '../domain/history.ts';
+import { batchCaption, totalBlockedLine, totalBlockedUnion } from '../domain/history.ts';
 
 let lastStatus: StatusSnapshot | null = null;
 
@@ -129,8 +129,9 @@ function render(s: StatusSnapshot): void {
   $('today-title').textContent = `${today} bloqué${today > 1 ? 's' : ''} aujourd'hui sur ${cap}`;
   setRing(today / Math.max(1, cap));
 
-  // 1.3.2 — total depuis le début (comptes bloqués par l'extension, historique persistant).
-  const total = totalBlocked(s.blockedByExt);
+  // 1.3.2 — total depuis le début : comptes bloqués par l'extension + comptes de la liste
+  // que X signale déjà bloqués sur ton compte (sans doublon).
+  const total = totalBlockedUnion(s.blockedByExt, s.blockedOnAccount);
   $('total-blocked-line').textContent = totalBlockedLine(total);
   $('total-link').hidden = total === 0;
 
@@ -201,5 +202,5 @@ window.addEventListener('pagehide', () => {
   }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.run || changes.queue || changes.settings || changes.blockedByExt)) void refresh();
+  if (area === 'local' && (changes.run || changes.queue || changes.settings || changes.blockedByExt || changes.blockedOnAccount)) void refresh();
 });

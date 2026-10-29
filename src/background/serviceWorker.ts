@@ -32,6 +32,18 @@ import type { Msg, MsgResponse, StatusSnapshot } from '../shared/messages.ts';
 import { currentFabProgress, refreshProgressUi } from './progressUi.ts';
 import { reinjectContentScripts, shouldReinject, type ReinjectApi } from './reinject.ts';
 
+// 1.3.2 — chrome.storage.local réservé aux contextes de l'extension (service worker, popup,
+// options, aperçu) : le content script n'y accède pas (il passe par GET_FAB_POS / SET_FAB_POS).
+// API récente : absente sur les anciens Chrome → ignorée (le content script n'y touche de toute façon pas).
+try {
+  const local = chrome.storage.local as unknown as {
+    setAccessLevel?: (o: { accessLevel: 'TRUSTED_CONTEXTS' }) => Promise<void>;
+  };
+  void local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' })?.catch?.(() => undefined);
+} catch {
+  /* non pris en charge */
+}
+
 // Badge + bouton x.com : mis à jour sur changement d'état, jamais par minuteur.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.run || changes.queue || changes.settings)) void refreshProgressUi();
@@ -107,6 +119,7 @@ async function statusSnapshot(): Promise<StatusSnapshot> {
     queue: store.queue,
     run: rollDay(store.run),
     blockedByExt: store.blockedByExt,
+    blockedOnAccount: store.blockedOnAccount,
     sessionOk,
     self,
   };
@@ -295,6 +308,7 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
         logs: [],
         blockedByExt: [],
         alreadyBlockedKeys: [],
+        blockedOnAccount: [],
         run: {
           ...store.run,
           totalDone: 0,

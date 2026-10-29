@@ -52,6 +52,8 @@ export interface StatusSnapshot {
   queue: QueueItem[];
   run: RunState;
   blockedByExt: BlockedRecord[];
+  /** 1.3.2 — comptes de la liste déjà bloqués sur le compte (pages de l'extension uniquement). */
+  blockedOnAccount: BlockedRecord[];
   sessionOk: boolean;
   self: { id?: string; handle?: string } | null;
 }

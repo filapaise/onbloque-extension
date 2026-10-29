@@ -12,6 +12,12 @@ import { applyCustomDelay, applyPace, nearestPace, sanitizeDelays } from '../dom
 import type { PacePreset } from '../domain/types.ts';
 import { initialRunState, reconcileBatch } from '../domain/queue.ts';
 import { sanitizeMinFollowers } from '../domain/followers.ts';
+import {
+  ACCOUNT_BLOCKED_KEY,
+  applyBlockingObservations,
+  sanitizeAccountBlocked,
+  type BlockingObservation,
+} from '../domain/history.ts';
 
 export interface StoreShape {
   settings: Settings;
@@ -24,6 +30,8 @@ export interface StoreShape {
   blockedByExt: BlockedRecord[];
   logs: LogEntry[];
   alreadyBlockedKeys: string[];
+  /** 1.3.2 — comptes de la liste déjà bloqués sur le compte (vus par X), plafonnés. */
+  blockedOnAccount: BlockedRecord[];
 }
 
 const KEYS = [
@@ -37,6 +45,7 @@ const KEYS = [
   'blockedByExt',
   'logs',
   'alreadyBlockedKeys',
+  ACCOUNT_BLOCKED_KEY,
 ] as const;
 
 export async function loadStore(): Promise<StoreShape> {
@@ -58,6 +67,7 @@ export async function loadStore(): Promise<StoreShape> {
     blockedByExt,
     logs: Array.isArray(raw.logs) ? raw.logs : [],
     alreadyBlockedKeys: Array.isArray(raw.alreadyBlockedKeys) ? raw.alreadyBlockedKeys : [],
+    blockedOnAccount: sanitizeAccountBlocked(raw.blockedOnAccount),
   };
 }
 
@@ -143,4 +153,20 @@ export async function pushBlocked(record: BlockedRecord, keys: string[]): Promis
     blockedByExt: blocked,
     alreadyBlockedKeys: [...set],
   });
+}
+
+/**
+ * 1.3.2 — Enregistre ce que X dit des relations « bloqué » (aperçu, garde-fou, déblocage).
+ * Lecture-modification-écriture de la seule clé `blockedOnAccount` ; aucune écriture si
+ * rien ne change. `allowRemoval` : seulement si la source dit de façon fiable « pas bloqué ».
+ */
+export async function recordBlockingObservations(
+  observations: readonly BlockingObservation[],
+  opts: { allowRemoval: boolean },
+  now = Date.now(),
+): Promise<void> {
+  if (!observations.length) return;
+  const data = (await chrome.storage.local.get(ACCOUNT_BLOCKED_KEY)) as Record<string, unknown>;
+  const next = applyBlockingObservations(data[ACCOUNT_BLOCKED_KEY], observations, now, opts);
+  if (next) await chrome.storage.local.set({ [ACCOUNT_BLOCKED_KEY]: next });
 }

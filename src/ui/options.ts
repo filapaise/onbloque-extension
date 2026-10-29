@@ -6,7 +6,7 @@ import type { ListEntry } from '../domain/types.ts';
 import { sendMessage } from '../shared/messages.ts';
 import { describeThreshold, fmtFollowers, isPresetThreshold, MAX_MIN_FOLLOWERS, parseFollowerInput } from '../domain/followers.ts';
 import { fmtTime } from './format.ts';
-import { accountLabel, blockedAccounts, fmtCount, profileUrl } from '../domain/history.ts';
+import { accountLabel, alreadyBlockedOnly, blockedAccounts, fmtCount, profileUrl } from '../domain/history.ts';
 import type { BlockedRecord } from '../domain/types.ts';
 import { ensureListHostFromUi } from './listHost.ts';
 
@@ -156,19 +156,28 @@ async function load(): Promise<void> {
   }
 
   renderWhitelist(s.whitelist);
-  // 1.3.2 — même chiffre que « Total bloqué depuis le début » dans le popup.
+  // 1.3.2 — même total que « Total bloqué depuis le début » dans le popup :
+  // bloqués par l'extension + comptes de la liste déjà bloqués sur votre compte (sans doublon).
+  const byExt = blockedAccounts(s.blockedByExt);
+  const onAccount = alreadyBlockedOnly(byExt, s.blockedOnAccount);
   $('history-line').textContent =
-    `${fmtCount(blockedAccounts(s.blockedByExt).length)} bloqués par l’extension · ${s.run.totalSkipped} ignorés` +
+    `${fmtCount(byExt.length + onAccount.length)} au total (${fmtCount(byExt.length)} par l’extension · ` +
+    `${fmtCount(onAccount.length)} déjà bloqués sur votre compte) · ${s.run.totalSkipped} ignorés` +
     (s.run.totalSmall ? ` · ${s.run.totalSmall} petits comptes passés` : '');
-  renderBlockedList(s.blockedByExt);
+  $('blocked-summary').textContent = `Comptes bloqués (${fmtCount(byExt.length + onAccount.length)})`;
+  renderAccountList('ext', byExt);
+  renderAccountList('account', onAccount);
 }
 
-/** 1.3.2 — liste des comptes bloqués par l'extension (lien « voir la liste » du popup). */
-function renderBlockedList(records: BlockedRecord[]): void {
-  const accounts = blockedAccounts(records);
-  $('blocked-summary').textContent = `Comptes bloqués par l’extension (${fmtCount(accounts.length)})`;
-  $('blocked-empty').hidden = accounts.length > 0;
-  const box = $('blocked-items');
+/**
+ * 1.3.2 — liste des comptes bloqués (lien « voir la liste » du popup), en deux groupes :
+ * « Bloqués par l’extension » et « Déjà bloqués sur votre compte ».
+ */
+function renderAccountList(group: 'ext' | 'account', accounts: BlockedRecord[]): void {
+  const label = group === 'ext' ? 'Bloqués par l’extension' : 'Déjà bloqués sur votre compte';
+  $(`blocked-${group}-title`).textContent = `${label} (${fmtCount(accounts.length)})`;
+  $(`blocked-${group}-empty`).hidden = accounts.length > 0;
+  const box = $(`blocked-${group}-items`);
   while (box.firstChild) box.removeChild(box.firstChild);
   for (const a of accounts) {
     const li = document.createElement('li');
@@ -182,7 +191,7 @@ function renderBlockedList(records: BlockedRecord[]): void {
     }
     const when = document.createElement('span');
     when.className = 'when';
-    when.textContent = a.at ? fmtTime(a.at) : '—';
+    when.textContent = a.at ? (group === 'ext' ? fmtTime(a.at) : `vu ${fmtTime(a.at)}`) : '—';
     li.append(name, when);
     box.appendChild(li);
   }
@@ -324,7 +333,7 @@ $('file').addEventListener('change', async () => {
 });
 
 $('btn-reset').addEventListener('click', async () => {
-  if (!confirm('Effacer l’historique local (compteurs, journal, suivi des blocages de l’extension) ? Cela ne débloque personne sur X.')) {
+  if (!confirm('Effacer l’historique local (compteurs, journal, suivi des comptes bloqués) ? Cela ne débloque personne sur X.')) {
     return;
   }
   await sendMessage({ type: 'RESET_HISTORY' });

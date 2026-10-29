@@ -15,6 +15,7 @@ L’extension stocke uniquement dans `chrome.storage` (local / session) :
 - la liste de comptes à bloquer (et son URL éventuelle) ;
 - votre liste de comptes protégés (liste blanche) ;
 - la file d’attente, les compteurs et le journal d’activité ;
+- les comptes bloqués par l’extension et les comptes de la liste que X indique déjà bloqués sur votre compte (pour le total « bloqués depuis le début ») ;
 - des réglages (rythme Prudent / Normal / Max).
 
 Ces données **restent sur votre machine**. Elles ne sont pas synchronisées vers un compte Fil Apaisé ni vers un backend OnBloque (il n’y en a pas).

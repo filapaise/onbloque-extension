@@ -111,7 +111,7 @@ describe('1.3.2 — popup et options', () => {
   it('le popup affiche le total et un lien « voir la liste » vers les options', () => {
     assert.match(html, /id="total-blocked-line"[^>]*>Total bloqué depuis le début : 0</);
     assert.match(html, /<a[^>]*id="total-link"[^>]*href="options\.html#bloques"[^>]*hidden[^>]*>voir la liste ›<\/a>/);
-    assert.match(src, /totalBlocked\(s\.blockedByExt\)/);
+    assert.match(src, /totalBlockedUnion\(s\.blockedByExt, s\.blockedOnAccount\)/);
     assert.match(src, /\$\('total-link'\)\.hidden = total === 0/);
   });
 
@@ -131,7 +131,8 @@ describe('1.3.2 — popup et options', () => {
     const opt = read('../static/options.html');
     assert.match(opt, /<details class="blocked-list" id="bloques">/);
     const osrc = read('../src/ui/options.ts');
-    assert.match(osrc, /renderBlockedList/);
+    assert.match(osrc, /renderAccountList\('ext'/);
+    assert.match(osrc, /renderAccountList\('account'/);
     assert.match(osrc, /noopener noreferrer/);
     assert.doesNotMatch(osrc, /innerHTML/);
   });
@@ -141,6 +142,7 @@ describe('1.3.2 — popup et options', () => {
     const block = sw.slice(sw.indexOf("case 'RESET_HISTORY'"), sw.indexOf("case 'OPEN_PREVIEW'"));
     assert.match(block, /blockedByExt: \[\]/);
     assert.match(block, /alreadyBlockedKeys: \[\]/);
+    assert.match(block, /blockedOnAccount: \[\]/);
     assert.match(block, /batchDone: 0/);
     assert.match(block, /batchSkipped: 0/);
     assert.match(block, /batchSmall: 0/);

@@ -3,7 +3,8 @@ import { entryKeys } from '../domain/handle.ts';
 import { describeError } from '../domain/errors.ts';
 import type { ListEntry, PreviewRow } from '../domain/types.ts';
 import type { PreviewSnapshot } from '../shared/messages.ts';
-import { loadStore } from '../infra/storage.ts';
+import { loadStore, recordBlockingObservations } from '../infra/storage.ts';
+import { observationsFromRelations } from '../domain/history.ts';
 import { lookupRelationships } from '../infra/xRelations.ts';
 import type { SelfAccount } from '../infra/xClient.ts';
 import { getSelf, openXSession } from './session.ts';
@@ -50,6 +51,16 @@ export async function buildPreviewSnapshot(
     } catch {
       /* cache facultatif */
     }
+  }
+
+  // 1.3.2 — comptes de la liste que X dit déjà bloqués (total du popup). Retrait seulement
+  // si friendships/lookup (fiable) dit « pas bloqué » ; en mode GraphQL, ajouts uniquement.
+  try {
+    await recordBlockingObservations(observationsFromRelations(listEntries, store.list?.entries, relations.map), {
+      allowRemoval: relations.source === 'friendships',
+    });
+  } catch {
+    /* suivi facultatif : n'empêche jamais l'aperçu */
   }
 
   const rows: PreviewRow[] = buildPreview({
