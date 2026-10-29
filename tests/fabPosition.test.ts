@@ -190,10 +190,11 @@ describe('floating button — security rules in the content script', () => {
   it('no longer injects itself into X navigation', () => {
     assert.doesNotMatch(src, /nav\.appendChild/);
   });
-  it('only sends OPEN_PREVIEW / GET_PROGRESS', () => {
+  it('only sends OPEN_PREVIEW / GET_PROGRESS / GET_FAB_POS / SET_FAB_POS', () => {
     const types = [...src.matchAll(/sendMessage\(\{\s*type:\s*'([A-Z_]+)'/g)].map((m) => m[1]);
     assert.ok(types.length > 0);
-    for (const t of types) assert.ok(t === 'OPEN_PREVIEW' || t === 'GET_PROGRESS', t);
+    const allowed = new Set(['OPEN_PREVIEW', 'GET_PROGRESS', 'GET_FAB_POS', 'SET_FAB_POS']);
+    for (const t of types) assert.ok(allowed.has(t!), t);
   });
   it('accepts progress pushes only from its own service worker', () => {
     assert.match(src, /sender\.id !== chrome\.runtime\.id \|\| sender\.tab/);

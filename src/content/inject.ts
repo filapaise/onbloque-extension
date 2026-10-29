@@ -2,6 +2,12 @@
  * Content script : bouton flottant compact sur x.com (déplaçable).
  * N'exécute jamais de blocage directement — ouvre l'aperçu via messaging.
  * Aucun innerHTML : tout est construit avec createElement / createElementNS.
+ *
+ * 1.3.2 — Discrétion vis-à-vis de la page : l'interface vit dans un Shadow DOM fermé,
+ * accroché à un élément hôte neutre (aucun id / classe / attribut « onbloque », aucune
+ * balise <style> dans la page). Les styles, libellés et compteurs restent dans la racine
+ * fermée, invisibles pour les scripts de x.com. La position est lue / écrite par le
+ * service worker (GET_FAB_POS / SET_FAB_POS) : ce script n'accède pas à chrome.storage.
  */
 import { collectHandlesFromPage } from './collect.ts';
 import { CONTEXT_INVALIDATED, extensionContextAlive, sendMessage } from '../shared/messages.ts';
@@ -14,6 +20,7 @@ import {
   isLeftHalf,
   loadPosition,
   opensDownward,
+  POS_KEY,
   probePoints,
   resolveOverlap,
   savePosition,
@@ -23,8 +30,11 @@ import {
   type Viewport,
 } from './fabPosition.ts';
 
-const ROOT_ID = 'onbloque-fab-root';
-const STYLE_ID = 'onbloque-fab-style';
+/** Identifiants des versions ≤ 1.3.1 (interface dans le DOM de la page) : nettoyage seulement. */
+const LEGACY_ROOT_ID = 'onbloque-fab-root';
+const LEGACY_STYLE_ID = 'onbloque-fab-style';
+/** Délai minimal entre deux ouvertures de l'aperçu depuis le bouton (anti-rafale). */
+export const OPEN_PREVIEW_DEBOUNCE_MS = 2000;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const PANEL_HEIGHT_ESTIMATE = 150;
 /** Anneau de progression : épais et contrasté (piste sombre, arc blanc) dans le bouton bleu. */
@@ -48,7 +58,12 @@ interface InstanceGuard {
   instance: string;
   alive: () => boolean;
   shutdown: () => void;
+  /** 1.3.2 — arrête l'instance ET retire son interface (référence gardée dans le monde isolé). */
+  retire?: () => void;
 }
+/** Élément hôte (neutre) dans la page, et racine de l'interface dans le Shadow DOM fermé. */
+let host: HTMLElement | null = null;
+let ui: HTMLElement | null = null;
 /** Vrai quand cette instance a cédé la place (ou est orpheline) : plus aucun minuteur. */
 let stopped = false;
 let tickTimer: ReturnType<typeof setInterval> | undefined;
@@ -58,69 +73,70 @@ function viewport(): Viewport {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
-function storageArea(): PosStorage | undefined {
-  try {
-    const local = chrome?.storage?.local;
-    if (!local) return undefined;
-    return {
-      get: (k) => local.get(k) as Promise<Record<string, unknown>>,
-      set: (items) => local.set(items),
-    };
-  } catch {
-    return undefined;
-  }
+/** Position du bouton via le service worker (aucun accès direct à chrome.storage). */
+function storageArea(): PosStorage {
+  return {
+    get: async (k) => {
+      const resp = await sendMessage({ type: 'GET_FAB_POS' });
+      return resp.ok && 'fabPos' in resp && resp.fabPos ? { [k]: resp.fabPos } : {};
+    },
+    set: async (items) => {
+      const pos = items[POS_KEY] as FabPos | undefined;
+      if (pos) await sendMessage({ type: 'SET_FAB_POS', pos: { right: pos.right, bottom: pos.bottom } });
+    },
+  };
 }
 
-function ensureStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
+/** Feuille de style de l'interface : uniquement à l'intérieur de la racine fantôme fermée. */
+function buildStyle(): HTMLStyleElement {
   const style = document.createElement('style');
-  style.id = STYLE_ID;
   style.textContent = `
-#${ROOT_ID}{position:fixed;z-index:9999;right:24px;bottom:168px;font-family:system-ui,-apple-system,sans-serif;visibility:hidden}
-#${ROOT_ID}.ready{visibility:visible}
-#${ROOT_ID} .ob-pop{position:absolute;right:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-#${ROOT_ID}.down .ob-pop{bottom:auto;top:calc(100% + 8px);flex-direction:column-reverse}
-#${ROOT_ID}.left .ob-pop{right:auto;left:0;align-items:flex-start}
-#${ROOT_ID} .ob-panel{display:none;flex-direction:column;gap:6px;background:#0f1419;color:#e7e9ea;border:1px solid #2f3336;border-radius:14px;padding:10px;min-width:220px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
-#${ROOT_ID}.open .ob-panel{display:flex}
-#${ROOT_ID} button{appearance:none;border:0;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-#${ROOT_ID} .ob-main{display:flex;align-items:center;height:${FAB_SIZE}px;min-width:${FAB_SIZE}px;padding:0;background:#1d9bf0;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.3);touch-action:none;user-select:none}
-#${ROOT_ID}.left .ob-main{flex-direction:row}
-#${ROOT_ID}:not(.left) .ob-main{flex-direction:row-reverse}
-#${ROOT_ID} .ob-main:hover{background:#1a8cd8}
-#${ROOT_ID} .ob-main:focus-visible{outline:2px solid #fff;outline-offset:2px}
-#${ROOT_ID} .ob-icon{flex:0 0 ${FAB_SIZE}px;height:${FAB_SIZE}px;display:flex;align-items:center;justify-content:center}
-#${ROOT_ID} .ob-label{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .18s ease,padding .18s ease}
-#${ROOT_ID} .ob-main:hover .ob-label,#${ROOT_ID} .ob-main:focus-visible .ob-label,#${ROOT_ID}.open .ob-label{max-width:120px}
-#${ROOT_ID}:not(.left) .ob-main:hover .ob-label,#${ROOT_ID}:not(.left) .ob-main:focus-visible .ob-label,#${ROOT_ID}:not(.left).open .ob-label{padding-left:14px}
-#${ROOT_ID}.left .ob-main:hover .ob-label,#${ROOT_ID}.left .ob-main:focus-visible .ob-label,#${ROOT_ID}.left.open .ob-label{padding-right:14px}
-#${ROOT_ID}.dragging .ob-main{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-#${ROOT_ID}.dragging .ob-label{max-width:0;padding:0}
-#${ROOT_ID} .ob-action{background:#16181c;color:#e7e9ea;border:1px solid #2f3336;text-align:left;padding:10px 14px}
-#${ROOT_ID} .ob-action:hover{background:#1e2126}
-#${ROOT_ID} .ob-hint{font-size:11px;color:#8b98a5;padding:0 4px 4px}
-#${ROOT_ID} .ob-icon{position:relative}
-#${ROOT_ID} .ob-ring{position:absolute;left:0;top:0;width:${FAB_SIZE}px;height:${FAB_SIZE}px;pointer-events:none;transform:rotate(-90deg);display:none;overflow:visible}
-#${ROOT_ID}.busy .ob-ring{display:block}
-#${ROOT_ID} .ob-ring circle{fill:none!important;stroke-width:${RING_W}px!important;vector-effect:none}
-#${ROOT_ID} .ob-ring .trk{stroke:rgba(15,20,25,.55)!important}
-#${ROOT_ID} .ob-ring .val{stroke:#ffffff!important;stroke-linecap:round;transition:stroke-dashoffset .4s ease;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
-#${ROOT_ID}[data-state="cap"] .ob-ring .val,#${ROOT_ID}[data-state="rate-limit"] .ob-ring .val,#${ROOT_ID}[data-state="retry"] .ob-ring .val{stroke:#ffd166!important}
-#${ROOT_ID}[data-state="error"] .ob-ring .val{stroke:#ff6b74!important}
-#${ROOT_ID}[data-state="paused"] .ob-ring .val{stroke:#e7e9ea!important}
-#${ROOT_ID}.stale .ob-main{background:#536471}
-#${ROOT_ID} .ob-count{position:absolute;top:-6px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#0f1419;color:#fff;border:1px solid #2f3336;font-size:10px;font-weight:700;line-height:16px;text-align:center;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
-#${ROOT_ID}:not(.left) .ob-count{right:-6px}
-#${ROOT_ID}.left .ob-count{left:-6px}
-#${ROOT_ID}.busy .ob-count{display:block}
-#${ROOT_ID}[data-state="cap"] .ob-count,#${ROOT_ID}[data-state="rate-limit"] .ob-count,#${ROOT_ID}[data-state="retry"] .ob-count{background:#ffad1f;color:#0f1419;border-color:#ffad1f}
-#${ROOT_ID}[data-state="error"] .ob-count{background:#f4212e;border-color:#f4212e}
-#${ROOT_ID} .ob-flash{padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:260px;display:flex;align-items:center;gap:8px}
-#${ROOT_ID} .ob-flash.info{background:#0f1419;border:1px solid #2f3336;color:#e7e9ea}
-#${ROOT_ID} .ob-flash .ob-reload{flex:0 0 auto;background:#1d9bf0;color:#fff;padding:6px 12px}
-#${ROOT_ID} .ob-flash .ob-reload:hover{background:#1a8cd8}
+:host{all:initial}
+.ob-root{position:fixed;z-index:9999;right:24px;bottom:168px;font-family:system-ui,-apple-system,sans-serif;visibility:hidden}
+.ob-root.ready{visibility:visible}
+.ob-root .ob-pop{position:absolute;right:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.ob-root.down .ob-pop{bottom:auto;top:calc(100% + 8px);flex-direction:column-reverse}
+.ob-root.left .ob-pop{right:auto;left:0;align-items:flex-start}
+.ob-root .ob-panel{display:none;flex-direction:column;gap:6px;background:#0f1419;color:#e7e9ea;border:1px solid #2f3336;border-radius:14px;padding:10px;min-width:220px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.ob-root.open .ob-panel{display:flex}
+.ob-root button{appearance:none;border:0;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.ob-root .ob-main{display:flex;align-items:center;height:${FAB_SIZE}px;min-width:${FAB_SIZE}px;padding:0;background:#1d9bf0;color:#fff;box-shadow:0 3px 12px rgba(0,0,0,.3);touch-action:none;user-select:none}
+.ob-root.left .ob-main{flex-direction:row}
+.ob-root:not(.left) .ob-main{flex-direction:row-reverse}
+.ob-root .ob-main:hover{background:#1a8cd8}
+.ob-root .ob-main:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ob-root .ob-icon{flex:0 0 ${FAB_SIZE}px;height:${FAB_SIZE}px;display:flex;align-items:center;justify-content:center}
+.ob-root .ob-label{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .18s ease,padding .18s ease}
+.ob-root .ob-main:hover .ob-label,.ob-root .ob-main:focus-visible .ob-label,.ob-root.open .ob-label{max-width:120px}
+.ob-root:not(.left) .ob-main:hover .ob-label,.ob-root:not(.left) .ob-main:focus-visible .ob-label,.ob-root:not(.left).open .ob-label{padding-left:14px}
+.ob-root.left .ob-main:hover .ob-label,.ob-root.left .ob-main:focus-visible .ob-label,.ob-root.left.open .ob-label{padding-right:14px}
+.ob-root.dragging .ob-main{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.ob-root.dragging .ob-label{max-width:0;padding:0}
+.ob-root .ob-action{background:#16181c;color:#e7e9ea;border:1px solid #2f3336;text-align:left;padding:10px 14px}
+.ob-root .ob-action:hover{background:#1e2126}
+.ob-root .ob-hint{font-size:11px;color:#8b98a5;padding:0 4px 4px}
+.ob-root .ob-icon{position:relative}
+.ob-root .ob-ring{position:absolute;left:0;top:0;width:${FAB_SIZE}px;height:${FAB_SIZE}px;pointer-events:none;transform:rotate(-90deg);display:none;overflow:visible}
+.ob-root.busy .ob-ring{display:block}
+.ob-root .ob-ring circle{fill:none!important;stroke-width:${RING_W}px!important;vector-effect:none}
+.ob-root .ob-ring .trk{stroke:rgba(15,20,25,.55)!important}
+.ob-root .ob-ring .val{stroke:#ffffff!important;stroke-linecap:round;transition:stroke-dashoffset .4s ease;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+.ob-root[data-state="cap"] .ob-ring .val,.ob-root[data-state="rate-limit"] .ob-ring .val,.ob-root[data-state="retry"] .ob-ring .val{stroke:#ffd166!important}
+.ob-root[data-state="error"] .ob-ring .val{stroke:#ff6b74!important}
+.ob-root[data-state="paused"] .ob-ring .val{stroke:#e7e9ea!important}
+.ob-root.stale .ob-main{background:#536471}
+.ob-root .ob-count{position:absolute;top:-6px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#0f1419;color:#fff;border:1px solid #2f3336;font-size:10px;font-weight:700;line-height:16px;text-align:center;pointer-events:none;display:none;font-variant-numeric:tabular-nums}
+.ob-root:not(.left) .ob-count{right:-6px}
+.ob-root.left .ob-count{left:-6px}
+.ob-root.busy .ob-count{display:block}
+.ob-root[data-state="cap"] .ob-count,.ob-root[data-state="rate-limit"] .ob-count,.ob-root[data-state="retry"] .ob-count{background:#ffad1f;color:#0f1419;border-color:#ffad1f}
+.ob-root[data-state="error"] .ob-count{background:#f4212e;border-color:#f4212e}
+.ob-root .ob-flash{padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:260px;display:flex;align-items:center;gap:8px}
+.ob-root .ob-flash.info{background:#0f1419;border:1px solid #2f3336;color:#e7e9ea}
+.ob-root .ob-flash .ob-reload{flex:0 0 auto;background:#1d9bf0;color:#fff;padding:6px 12px}
+.ob-root .ob-flash .ob-reload:hover{background:#1a8cd8}
 `;
-  document.documentElement.appendChild(style);
+  return style;
 }
 
 /** Icône « cercle barré » construite en SVG via createElementNS (pas d'innerHTML). */
@@ -175,12 +191,12 @@ function buildRing(): SVGSVGElement {
   return svg;
 }
 
-function buildRoot(): HTMLElement {
-  let root = document.getElementById(ROOT_ID);
-  if (root) return root;
-  root = document.createElement('div');
-  root.id = ROOT_ID;
-  root.dataset.instance = INSTANCE;
+/** Hôte neutre + Shadow DOM fermé : la page ne voit qu'un <div> sans attribut. */
+function buildUi(): { host: HTMLElement; root: HTMLElement } {
+  const h = document.createElement('div');
+  const shadow = h.attachShadow({ mode: 'closed' });
+  const root = document.createElement('div');
+  root.className = 'ob-root';
   const pop = document.createElement('div');
   pop.className = 'ob-pop';
   const panel = document.createElement('div');
@@ -219,7 +235,8 @@ function buildRoot(): HTMLElement {
   count.className = 'ob-count';
   count.setAttribute('aria-hidden', 'true');
   root.append(pop, main, count);
-  return root;
+  shadow.append(buildStyle(), root);
+  return { host: h, root };
 }
 
 /** Applique une position : ancrage à gauche ou à droite selon la moitié d'écran. */
@@ -243,7 +260,10 @@ function applyPosition(root: HTMLElement, pos: FabPos): void {
 function obstacleAt(root: HTMLElement, x: number, y: number): Rect | null {
   if (x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight) return null;
   const stack = document.elementsFromPoint(x, y);
-  const top = stack.find((el) => !root.contains(el) && el !== document.documentElement && el !== document.body);
+  // Le contenu du Shadow DOM est vu comme l'hôte depuis le document.
+  const top = stack.find(
+    (el) => el !== host && !(host?.contains(el) ?? false) && !root.contains(el) && el !== document.documentElement && el !== document.body,
+  );
   if (!top) return null;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -343,6 +363,8 @@ function wireDrag(root: HTMLElement, main: HTMLButtonElement): void {
   );
 }
 
+let lastPreviewOpen = 0;
+
 function wire(root: HTMLElement): void {
   if (root.dataset.wired === '1') return;
   root.dataset.wired = '1';
@@ -351,6 +373,7 @@ function wire(root: HTMLElement): void {
   main.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!e.isTrusted) return;
     if (!extensionContextAlive()) {
       goStale(root);
       showError(root, CONTEXT_INVALIDATED);
@@ -364,11 +387,16 @@ function wire(root: HTMLElement): void {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // 1.3.2 — seuls les vrais clics de l'utilisateur (jamais un événement synthétique).
+      if (!e.isTrusted) return;
+      const now = Date.now();
+      if (now - lastPreviewOpen < OPEN_PREVIEW_DEBOUNCE_MS) return;
       root.classList.remove('open');
       main.setAttribute('aria-expanded', 'false');
       const act = btn.dataset.act;
       try {
         let resp;
+        lastPreviewOpen = now;
         if (act === 'page') {
           const entries = collectHandlesFromPage();
           if (!entries.length) {
@@ -394,7 +422,8 @@ function wire(root: HTMLElement): void {
   document.addEventListener(
     'click',
     (e) => {
-      if (!root.contains(e.target as Node)) {
+      // Clic hors du bouton (le Shadow DOM fermé est vu comme l'hôte dans le chemin).
+      if (!host || !e.composedPath().includes(host)) {
         root.classList.remove('open');
         main.setAttribute('aria-expanded', 'false');
       }
@@ -487,8 +516,7 @@ function wireProgress(root: HTMLElement): void {
       const p = parseFabProgress((msg as { progress?: unknown }).progress);
       if (!p) return;
       progress = p;
-      const r = document.getElementById(ROOT_ID);
-      if (r) renderProgress(r);
+      if (ui && !stopped) renderProgress(ui);
     });
   } catch {
     /* contexte invalidé */
@@ -505,8 +533,7 @@ async function requestProgress(): Promise<void> {
   if (stopped) return;
   const resp = await sendMessage({ type: 'GET_PROGRESS' });
   if (!resp.ok && resp.error === CONTEXT_INVALIDATED) {
-    const r = document.getElementById(ROOT_ID);
-    if (r && r.dataset.instance === INSTANCE) goStale(r);
+    if (ui) goStale(ui);
     else shutdown();
     return;
   }
@@ -514,21 +541,20 @@ async function requestProgress(): Promise<void> {
   const p = parseFabProgress(resp.progress);
   if (!p) return;
   progress = p;
-  const r = document.getElementById(ROOT_ID);
-  if (r) renderProgress(r);
+  if (ui) renderProgress(ui);
 }
 
 function mount(): void {
   if (stopped) return;
-  const existing = document.getElementById(ROOT_ID);
-  if (existing && existing.dataset.instance !== INSTANCE) {
+  const guard = (window as unknown as Record<string, InstanceGuard | undefined>)[GUARD_KEY];
+  if (guard && guard.instance !== INSTANCE) {
     // Une instance plus récente a pris la main : celle-ci s'efface.
-    shutdown();
+    retire();
     return;
   }
-  ensureStyle();
-  const root = buildRoot();
-  if (!root.isConnected) document.documentElement.appendChild(root);
+  if (!host || !ui) ({ host, root: ui } = buildUi());
+  const root = ui;
+  if (!host.isConnected) document.documentElement.appendChild(host);
   wire(root);
   wireProgress(root);
   renderProgress(root);
@@ -581,10 +607,18 @@ function stopWatching(): void {
   document.removeEventListener('visibilitychange', onVisible);
 }
 
-/** Cède la place à une instance plus récente (ne touche pas à son interface). */
+/** Arrête cette instance (minuteurs, observateurs) sans toucher à l'interface. */
 function shutdown(): void {
   stopped = true;
   stopWatching();
+}
+
+/** Cède la place à une instance plus récente : arrêt + retrait de sa propre interface. */
+function retire(): void {
+  shutdown();
+  host?.remove();
+  host = null;
+  ui = null;
 }
 
 let lastUrl = location.href;
@@ -592,8 +626,7 @@ function onTick(): void {
   if (stopped) return;
   if (location.href !== lastUrl) lastUrl = location.href;
   if (!contextAlive()) {
-    const root = document.getElementById(ROOT_ID);
-    if (root && root.dataset.instance === INSTANCE) goStale(root);
+    if (ui) goStale(ui);
     else shutdown();
     return;
   }
@@ -604,8 +637,7 @@ let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 function onResize(): void {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    const root = document.getElementById(ROOT_ID);
-    if (root && !stopped) relayout(root);
+    if (ui && !stopped) relayout(ui);
   }, 150);
 }
 
@@ -626,23 +658,23 @@ function start(): void {
     }
     if (prevAlive) return; // déjà injecté et fonctionnel
     try {
-      prev.shutdown();
+      if (prev.retire) prev.retire();
+      else prev.shutdown();
     } catch {
       /* ancienne instance inaccessible */
     }
   }
-  w[GUARD_KEY] = { instance: INSTANCE, alive: contextAlive, shutdown };
+  w[GUARD_KEY] = { instance: INSTANCE, alive: contextAlive, shutdown, retire };
 
-  // Interface laissée par une instance précédente (orpheline) : on la remplace.
-  const old = document.getElementById(ROOT_ID);
-  if (old && old.dataset.instance !== INSTANCE) old.remove();
-  document.getElementById(STYLE_ID)?.remove();
+  // Interface laissée par une version ≤ 1.3.1 (dans le DOM de la page) : retirée.
+  document.getElementById(LEGACY_ROOT_ID)?.remove();
+  document.getElementById(LEGACY_STYLE_ID)?.remove();
 
   mount();
 
   obs = new MutationObserver(() => {
     if (stopped) return;
-    if (!document.getElementById(ROOT_ID)?.isConnected) mount();
+    if (!host?.isConnected) mount();
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
 

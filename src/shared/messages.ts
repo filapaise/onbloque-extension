@@ -10,6 +10,7 @@ import type {
 } from '../domain/types.ts';
 import type { DiagEntry } from '../infra/diagnostics.ts';
 import type { FabProgress } from '../domain/progress.ts';
+import type { FabPos } from '../content/fabPosition.ts';
 
 export type Msg =
   | { type: 'GET_STATUS' }
@@ -37,6 +38,9 @@ export type Msg =
   | { type: 'OPEN_PREVIEW'; mode?: 'entries'; entries: ListEntry[]; sourceLabel?: string; precheckNone?: boolean }
   | { type: 'PREVIEW_DIFF_CONFIRM'; list: BlockList; source: 'url' | 'seed'; addedKeys: string[] }
   | { type: 'GET_PROGRESS' }
+  /** 1.3.2 — position du bouton x.com (le content script n'accède plus à chrome.storage). */
+  | { type: 'GET_FAB_POS' }
+  | { type: 'SET_FAB_POS'; pos: FabPos }
   | { type: 'PING' };
 
 export interface StatusSnapshot {
@@ -74,6 +78,7 @@ export type MsgResponse =
   | { ok: true; added: number; queueLength: number }
   | { ok: true; pong: true }
   | { ok: true; progress: FabProgress }
+  | { ok: true; fabPos: FabPos | null }
   | { ok: false; error: string };
 
 /**

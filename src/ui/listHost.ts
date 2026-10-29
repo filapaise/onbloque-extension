@@ -1,7 +1,6 @@
 /** Demande une permission d'hôte optionnelle depuis l'UI (geste utilisateur). */
 
 const BUILTIN = new Set([
-  'https://onbloquelextremedroite.fun',
   'https://x.com',
   'https://twitter.com',
 ]);

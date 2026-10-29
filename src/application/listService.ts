@@ -11,7 +11,6 @@ export async function loadBundledSeed(): Promise<{ list: BlockList; warnings: st
 }
 
 const BUILTIN_LIST_ORIGINS = new Set([
-  'https://onbloquelextremedroite.fun',
   'https://x.com',
   'https://twitter.com',
 ]);

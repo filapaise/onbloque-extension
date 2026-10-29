@@ -43,7 +43,9 @@ function shim(scenario) {
     run: scenario === 'ratelimit'
       ? { running: false, dayKey: 'x', actionsToday: 96, backoffLevel: 0, resumeAt: now + 14 * 60_000, resumeReason: 'rate-limit', lastError: 'Limite X atteinte, reprise automatique à 22:41', totalDone: 96, totalSkipped: 4, lastActionAt: now - 60_000, nextActionAt: null, lastBlocked: { handle: 'compte_demo_08', at: now - 60_000 }, batchDone: 96, batchSkipped: 4 }
       : { running: true, dayKey: 'x', actionsToday: 12, backoffLevel: 0, resumeAt: null, resumeReason: null, lastError: null, totalDone: 12, totalSkipped: 2, lastActionAt: now - 30_000, nextActionAt: now + 37_000, lastBlocked: { handle: 'compte_demo_04', at: now - 30_000 }, batchDone: 12, batchSkipped: 2 },
-    blockedByExt: [], sessionOk: true, self: { id: '1', handle: 'demo_user' },
+    // 1.3.2 — historique de démo : « Total bloqué depuis le début » + liste dans les options.
+    blockedByExt: Array.from({ length: scenario === 'ratelimit' ? 214 : 130 }, (_, i) => ({ id: String(5000 + i), handle: `compte_demo_${String(i + 10).padStart(3, '0')}`, at: now - (i + 1) * 47_000 })),
+    sessionOk: true, self: { id: '1', handle: 'demo_user' },
   };
   const counts = {};
   for (const r of demoRows) counts[r.status] = (counts[r.status] ?? 0) + 1;

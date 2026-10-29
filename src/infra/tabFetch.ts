@@ -128,11 +128,31 @@ export async function collectPageScriptUrls(tabId: number): Promise<string[]> {
   }
 }
 
+/**
+ * 1.3.2 — Seules ces destinations peuvent être appelées depuis l'onglet x.com
+ * (cookies de session inclus) : l'API web de X et les bundles JS de X.
+ * Toute autre URL est refusée avant même d'injecter quoi que ce soit dans l'onglet.
+ */
+export function isAllowedTabFetchUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port) return false;
+  if (u.hostname === 'x.com') return u.pathname.startsWith('/i/api/');
+  return u.hostname === 'abs.twimg.com';
+}
+
+export const TAB_FETCH_REFUSED = 'Requête refusée : URL non autorisée pour l’onglet x.com.';
+
 async function fetchViaTab(
   tabId: number,
   url: string,
   init: { method: string; headers: Record<string, string>; body: string | null; credentials: RequestCredentials },
 ): Promise<{ status: number; body: string; rl?: { reset: string | null; remaining: string | null } }> {
+  if (!isAllowedTabFetchUrl(url)) throw new Error(TAB_FETCH_REFUSED);
   let injected;
   try {
     injected = await chrome.scripting.executeScript({
@@ -172,6 +192,7 @@ const NULL_BODY_STATUS = new Set([101, 103, 204, 205, 304]);
 
 export function makeTabFetch(tabId: number): (url: string, init?: RequestInit) => Promise<Response> {
   return async (url, init = {}) => {
+    if (!isAllowedTabFetchUrl(url)) throw new Error(TAB_FETCH_REFUSED);
     const r = await fetchViaTab(tabId, url, {
       method: init.method ?? 'GET',
       headers: (init.headers as Record<string, string>) ?? {},

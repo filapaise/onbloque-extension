@@ -97,7 +97,10 @@ describe('1.3.1 — script de page : idempotent et sans minuteur fou', () => {
   const src = readFileSync(new URL('../src/content/inject.ts', import.meta.url), 'utf8');
   it('garde anti double injection + remplacement de l’ancien bouton', () => {
     assert.match(src, /__onbloqueContentScript/);
-    assert.match(src, /old\.dataset\.instance !== INSTANCE\) old\.remove\(\)/);
+    // 1.3.2 : l'ancienne instance est retirée via la référence du monde isolé (plus d'id dans le DOM),
+    // et l'interface d'une version ≤ 1.3.1 est nettoyée.
+    assert.match(src, /if \(prev\.retire\) prev\.retire\(\);\s*else prev\.shutdown\(\);/);
+    assert.match(src, /getElementById\(LEGACY_ROOT_ID\)\?\.remove\(\)/);
   });
   it('arrête minuteur, observateur et écouteurs quand le contexte est mort', () => {
     assert.match(src, /clearInterval\(tickTimer\)/);

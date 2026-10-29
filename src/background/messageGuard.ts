@@ -2,9 +2,13 @@ import { HANDLE_RE, NUMERIC_ID_RE, parseAccountRef, entryKey } from '../domain/h
 import { parseListBody } from '../domain/listParse.ts';
 import type { ListEntry, BlockList } from '../domain/types.ts';
 import type { Msg } from '../shared/messages.ts';
+import type { FabPos } from '../content/fabPosition.ts';
 
-/** GET_PROGRESS ne renvoie que des compteurs (aucun @, aucune liste, aucun réglage). */
-export const CONTENT_ALLOWED_TYPES = ['OPEN_PREVIEW', 'GET_PROGRESS', 'PING'] as const;
+/**
+ * GET_PROGRESS ne renvoie que des compteurs (aucun @, aucune liste, aucun réglage).
+ * 1.3.2 — GET_FAB_POS / SET_FAB_POS : seule la position du bouton (2 nombres bornés).
+ */
+export const CONTENT_ALLOWED_TYPES = ['OPEN_PREVIEW', 'GET_PROGRESS', 'PING', 'GET_FAB_POS', 'SET_FAB_POS'] as const;
 const CONTENT_ALLOWED = new Set<string>(CONTENT_ALLOWED_TYPES);
 
 export function isContentAllowed(type: string): boolean {
@@ -119,4 +123,19 @@ export function previewEntriesFor(
   const entries = sanitizeEntries(msg.entries, 2000);
   if (!entries.length) throw new Error('Aucun compte valide à prévisualiser.');
   return entries;
+}
+
+/** Décalage maximal accepté pour le bouton x.com (px depuis le coin bas-droit). */
+export const MAX_FAB_OFFSET = 10_000;
+
+/**
+ * 1.3.2 — Valide la position envoyée par le content script (SET_FAB_POS) :
+ * exactement deux nombres finis, entre 0 et MAX_FAB_OFFSET, arrondis. Sinon erreur.
+ */
+export function sanitizeFabPos(raw: unknown): FabPos {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Position invalide.');
+  const r = raw as Record<string, unknown>;
+  const ok = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= MAX_FAB_OFFSET;
+  if (!ok(r.right) || !ok(r.bottom)) throw new Error('Position invalide.');
+  return { right: Math.round(r.right), bottom: Math.round(r.bottom) };
 }

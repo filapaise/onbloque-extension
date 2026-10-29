@@ -27,7 +27,7 @@ export const FAB_SIZE = 40;
 export const EDGE_MARGIN = 8;
 /** Espace laissé au-dessus d'un élément de X qui gênait. */
 export const NUDGE_GAP = 20;
-/** Clé chrome.storage.local (lue/écrite uniquement par le content script). */
+/** Clé chrome.storage.local (1.3.2 : lue/écrite par le service worker, via GET_FAB_POS / SET_FAB_POS). */
 export const POS_KEY = 'fabPosition';
 
 /** Largeur sous laquelle X passe en mise en page mobile (barre d'onglets en bas). */

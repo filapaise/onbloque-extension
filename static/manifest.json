@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OnBloque",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Bloquer sur X une liste de comptes (#OnBloquelExtremeDroite) : aperçu, comptes protégés, plafond journalier.",
   "permissions": [
     "storage",
@@ -10,8 +10,7 @@
   ],
   "host_permissions": [
     "https://x.com/*",
-    "https://twitter.com/*",
-    "https://onbloquelextremedroite.fun/*"
+    "https://twitter.com/*"
   ],
   "optional_host_permissions": [
     "https://*/*"

@@ -3,6 +3,7 @@ import { fmtRelative } from './format.ts';
 import { fmtClock } from '../domain/errors.ts';
 import { badgeFor, computeProgress, countLine, etaLine, fmtWhen, nextLine, SLOW_PACE_NOTE } from '../domain/progress.ts';
 import { fmtFollowers } from '../domain/followers.ts';
+import { batchCaption, totalBlocked, totalBlockedLine } from '../domain/history.ts';
 
 let lastStatus: StatusSnapshot | null = null;
 
@@ -128,14 +129,21 @@ function render(s: StatusSnapshot): void {
   $('today-title').textContent = `${today} bloqué${today > 1 ? 's' : ''} aujourd'hui sur ${cap}`;
   setRing(today / Math.max(1, cap));
 
+  // 1.3.2 — total depuis le début (comptes bloqués par l'extension, historique persistant).
+  const total = totalBlocked(s.blockedByExt);
+  $('total-blocked-line').textContent = totalBlockedLine(total);
+  $('total-link').hidden = total === 0;
+
+  // Tuiles : le lot en cours (ou le dernier lot terminé), pas le cumul.
+  $('stats-caption').textContent = batchCaption(s.queue.length);
   $('queue').textContent = String(s.queue.length);
-  $('total-done').textContent = String(s.run.totalDone);
-  $('total-skip').textContent = String(s.run.totalSkipped);
-  // 1.3.0 — petits comptes passés (seuil d'abonnés), affichés si le seuil sert ou a servi.
+  $('batch-done').textContent = String(s.run.batchDone ?? 0);
+  $('batch-skip').textContent = String(s.run.batchSkipped ?? 0);
+  // 1.3.0 — petits comptes passés (seuil d'abonnés), affichés si le seuil sert ou a servi dans ce lot.
   const minF = s.settings.minFollowers ?? 0;
-  const small = s.run.totalSmall ?? 0;
+  const small = s.run.batchSmall ?? 0;
   $('stat-small').hidden = !minF && !small;
-  $('total-small').textContent = String(small);
+  $('batch-small').textContent = String(small);
   const th = $('threshold-line');
   th.hidden = !minF;
   th.textContent = minF ? `Seuil actif : seulement les comptes à ${fmtFollowers(minF)} abonnés ou plus.` : '';
@@ -193,5 +201,5 @@ window.addEventListener('pagehide', () => {
   }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.run || changes.queue || changes.settings)) void refresh();
+  if (area === 'local' && (changes.run || changes.queue || changes.settings || changes.blockedByExt)) void refresh();
 });

@@ -25,7 +25,9 @@ import {
   sanitizeEntries,
   sanitizeList,
   sanitizeQueueItems,
+  sanitizeFabPos,
 } from './messageGuard.ts';
+import { POS_KEY, parseStoredPosition } from '../content/fabPosition.ts';
 import type { Msg, MsgResponse, StatusSnapshot } from '../shared/messages.ts';
 import { currentFabProgress, refreshProgressUi } from './progressUi.ts';
 import { reinjectContentScripts, shouldReinject, type ReinjectApi } from './reinject.ts';
@@ -116,6 +118,22 @@ async function handle(msg: Msg, _sender: chrome.runtime.MessageSender): Promise<
       return { ok: true, pong: true };
     case 'GET_PROGRESS':
       return { ok: true, progress: await currentFabProgress() };
+    case 'GET_FAB_POS': {
+      const data = (await chrome.storage.local.get(POS_KEY)) as Record<string, unknown>;
+      const saved = parseStoredPosition(data[POS_KEY]);
+      let fabPos = null;
+      try {
+        fabPos = saved ? sanitizeFabPos(saved) : null;
+      } catch {
+        fabPos = null; // valeur hors bornes en stockage → position par défaut
+      }
+      return { ok: true, fabPos };
+    }
+    case 'SET_FAB_POS': {
+      const fabPos = sanitizeFabPos((msg as { pos?: unknown }).pos);
+      await chrome.storage.local.set({ [POS_KEY]: fabPos });
+      return { ok: true, fabPos };
+    }
     case 'GET_STATUS':
       return { ok: true, status: await statusSnapshot() };
     case 'GET_SETTINGS': {

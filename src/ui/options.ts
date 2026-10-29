@@ -6,6 +6,8 @@ import type { ListEntry } from '../domain/types.ts';
 import { sendMessage } from '../shared/messages.ts';
 import { describeThreshold, fmtFollowers, isPresetThreshold, MAX_MIN_FOLLOWERS, parseFollowerInput } from '../domain/followers.ts';
 import { fmtTime } from './format.ts';
+import { accountLabel, blockedAccounts, fmtCount, profileUrl } from '../domain/history.ts';
+import type { BlockedRecord } from '../domain/types.ts';
 import { ensureListHostFromUi } from './listHost.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -154,10 +156,44 @@ async function load(): Promise<void> {
   }
 
   renderWhitelist(s.whitelist);
+  // 1.3.2 — même chiffre que « Total bloqué depuis le début » dans le popup.
   $('history-line').textContent =
-    `${s.run.totalDone} bloqués · ${s.run.totalSkipped} ignorés` +
-    (s.run.totalSmall ? ` · ${s.run.totalSmall} petits comptes passés` : '') +
-    ` · ${s.blockedByExt.length} par l’extension`;
+    `${fmtCount(blockedAccounts(s.blockedByExt).length)} bloqués par l’extension · ${s.run.totalSkipped} ignorés` +
+    (s.run.totalSmall ? ` · ${s.run.totalSmall} petits comptes passés` : '');
+  renderBlockedList(s.blockedByExt);
+}
+
+/** 1.3.2 — liste des comptes bloqués par l'extension (lien « voir la liste » du popup). */
+function renderBlockedList(records: BlockedRecord[]): void {
+  const accounts = blockedAccounts(records);
+  $('blocked-summary').textContent = `Comptes bloqués par l’extension (${fmtCount(accounts.length)})`;
+  $('blocked-empty').hidden = accounts.length > 0;
+  const box = $('blocked-items');
+  while (box.firstChild) box.removeChild(box.firstChild);
+  for (const a of accounts) {
+    const li = document.createElement('li');
+    const url = profileUrl(a);
+    const name = document.createElement(url ? 'a' : 'span');
+    name.textContent = accountLabel(a);
+    if (url && name instanceof HTMLAnchorElement) {
+      name.href = url;
+      name.target = '_blank';
+      name.rel = 'noopener noreferrer';
+    }
+    const when = document.createElement('span');
+    when.className = 'when';
+    when.textContent = a.at ? fmtTime(a.at) : '—';
+    li.append(name, when);
+    box.appendChild(li);
+  }
+}
+
+/** Ouvert depuis le popup (« voir la liste ») : déplie la liste et y défile. */
+function openBlockedFromHash(): void {
+  if (location.hash !== '#bloques') return;
+  const d = $('bloques') as HTMLDetailsElement;
+  d.open = true;
+  d.scrollIntoView({ block: 'start' });
 }
 
 function renderWhitelist(list: ListEntry[]): void {
@@ -340,4 +376,5 @@ $('btn-diag-copy').addEventListener('click', async () => {
 });
 $('diag-card').addEventListener('toggle', () => void loadDiagnostics());
 
-void load();
+void load().then(openBlockedFromHash);
+window.addEventListener('hashchange', openBlockedFromHash);

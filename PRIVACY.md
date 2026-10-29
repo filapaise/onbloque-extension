@@ -24,7 +24,7 @@ Ces données **restent sur votre machine**. Elles ne sont pas synchronisées ver
 OnBloque peut effectuer des requêtes :
 
 1. **vers `x.com` / `twitter.com`**, avec **votre session déjà ouverte** dans Chrome, uniquement pour : vérifier la connexion, résoudre un identifiant, consulter des relations, créer ou retirer un blocage — **à votre demande** (après aperçu) ou pour poursuivre une file que vous avez lancée ;
-2. **vers l’URL de liste** que vous avez configurée (par défaut le domaine public Blockfacho `onbloquelextremedroite.fun`, ou une URL https que vous choisissez), uniquement pour télécharger la liste.
+2. **vers l’URL de liste** que vous avez configurée (aucune par défaut : la liste de départ est embarquée dans l’extension ; seulement si vous indiquez une URL https, après votre accord pour ce domaine), uniquement pour télécharger la liste.
 
 Aucun jeton, cookie ou contenu de message n’est recopié vers l’éditeur. Les journaux d’erreur locaux n’incluent pas les cookies ni le bearer.
 
