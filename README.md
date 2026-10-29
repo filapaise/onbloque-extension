@@ -2,16 +2,23 @@
 
 Une extension Chrome pour bloquer d'un coup les comptes d'extrême droite sur X. #OnBloquelExtremeDroite
 
-### ⬇️ [Télécharger la dernière version (zip)](https://github.com/filapaise/onbloque-extension/releases/latest)
+### 👉 [Installer depuis le Chrome Web Store](https://chromewebstore.google.com/detail/afphjkpbheomoenndpopehkkfifmpiam)
 
-Bientôt sur le Chrome Web Store. En attendant, ça s'installe avec le zip en 1 minute 👇
+[![Disponible sur le Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Installer%20OnBloque-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/afphjkpbheomoenndpopehkkfifmpiam)
 
-## Installation en 1 minute
+Un clic sur **Ajouter à Chrome**, puis va sur [x.com](https://x.com) et clique sur le bouton **OnBloque** (le petit rond en bas à droite). C'est tout.
 
-1. Télécharge le zip (lien juste au-dessus) et décompresse-le dans un dossier que tu gardes.
+<details>
+<summary>Ou installer à la main depuis GitHub (dernière version)</summary>
+
+La version GitHub a parfois un peu d'avance sur le store.
+
+1. Télécharge le zip de la [dernière version](https://github.com/filapaise/onbloque-extension/releases/latest) et décompresse-le dans un dossier que tu gardes.
 2. Ouvre `chrome://extensions` et active le **Mode développeur** (en haut à droite).
 3. Clique sur **Charger l'extension non empaquetée** et choisis le dossier décompressé.
-4. Va sur [x.com](https://x.com) et clique sur le bouton **OnBloque** (le petit rond en bas à droite).
+4. Va sur [x.com](https://x.com) et clique sur le bouton **OnBloque**.
+
+</details>
 
 <p><img src="store/assets/screenshot-01-popup.png" alt="Le popup OnBloque" width="420"></p>
 
@@ -58,7 +65,9 @@ La liste de départ vient du répertoire Blockfacho ([onbloquelextremedroite.fun
 
 ## Mettre à jour
 
-Télécharge le nouveau zip, remplace le contenu du dossier, puis clique sur ↻ (Recharger) sur la carte OnBloque dans `chrome://extensions`.
+Depuis le Chrome Web Store, les mises à jour se font toutes seules.
+
+Si tu l'as installée à la main : télécharge le nouveau zip, remplace le contenu du dossier, puis clique sur ↻ (Recharger) sur la carte OnBloque dans `chrome://extensions`.
 
 ## Tes données
 
@@ -119,7 +128,7 @@ Format de liste `onbloque-list/1` :
 
 A Chrome extension to block far-right accounts on X from a shared list. #OnBloquelExtremeDroite
 
-**Install:** download the zip from [the latest release](https://github.com/filapaise/onbloque-extension/releases/latest) and unzip it. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the unzipped folder. Then go to x.com and click the OnBloque button.
+**Install:** [get it on the Chrome Web Store](https://chromewebstore.google.com/detail/afphjkpbheomoenndpopehkkfifmpiam). Or install by hand: download the zip from [the latest release](https://github.com/filapaise/onbloque-extension/releases/latest) and unzip it. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the unzipped folder. Then go to x.com and click the OnBloque button.
 
 - You see the list first and pick who gets blocked.
 - People you follow, and people who follow you, are skipped.
