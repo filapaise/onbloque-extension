@@ -11,7 +11,6 @@ mkdirSync(dist, { recursive: true });
 
 const entryPoints = {
   background: join(root, 'src/background/serviceWorker.ts'),
-  content: join(root, 'src/content/inject.ts'),
   popup: join(root, 'src/ui/popup.ts'),
   options: join(root, 'src/ui/options.ts'),
   preview: join(root, 'src/ui/preview.ts'),
@@ -29,6 +28,20 @@ await esbuild.build({
   logLevel: 'info',
   // chrome.* is provided by the extension runtime.
   external: [],
+});
+
+// Content script : script classique en IIFE (pas de const/let au niveau global), pour
+// pouvoir être réinjecté après une mise à jour sans « Identifier already declared ».
+await esbuild.build({
+  entryPoints: { content: join(root, 'src/content/inject.ts') },
+  outdir: dist,
+  bundle: true,
+  format: 'iife',
+  target: ['chrome120'],
+  platform: 'browser',
+  sourcemap: false,
+  minify: false,
+  logLevel: 'info',
 });
 
 // Static assets

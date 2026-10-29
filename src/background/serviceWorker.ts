@@ -28,6 +28,7 @@ import {
 } from './messageGuard.ts';
 import type { Msg, MsgResponse, StatusSnapshot } from '../shared/messages.ts';
 import { currentFabProgress, refreshProgressUi } from './progressUi.ts';
+import { reinjectContentScripts, shouldReinject, type ReinjectApi } from './reinject.ts';
 
 // Badge + bouton x.com : mis à jour sur changement d'état, jamais par minuteur.
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -36,7 +37,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
 chrome.runtime.onStartup?.addListener(() => void refreshProgressUi());
 void refreshProgressUi();
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+  // Onglets x.com ouverts avant l'installation / la mise à jour : y remettre le bouton.
+  if (shouldReinject(details?.reason)) {
+    void reinjectContentScripts(chrome as unknown as ReinjectApi).catch(() => undefined);
+  }
   void (async () => {
     const store = await loadStore();
     if (!store.list) {

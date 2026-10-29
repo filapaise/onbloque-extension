@@ -4,7 +4,8 @@
  * Aucun innerHTML : tout est construit avec createElement / createElementNS.
  */
 import { collectHandlesFromPage } from './collect.ts';
-import { sendMessage } from '../shared/messages.ts';
+import { CONTEXT_INVALIDATED, extensionContextAlive, sendMessage } from '../shared/messages.ts';
+import { explainContentError } from './contentErrors.ts';
 import { fmtDuration, parseFabProgress, ringFraction, type FabProgress } from '../domain/progress.ts';
 import {
   DRAG_THRESHOLD,
@@ -35,6 +36,23 @@ const RING_C = 2 * Math.PI * RING_R;
 let basePos: FabPos | null = null;
 let shownPos: FabPos | null = null;
 let dragging = false;
+
+/**
+ * Identifiant de cette instance du script. Après une mise à jour / réinstallation, le
+ * service worker réinjecte le script dans les onglets x.com déjà ouverts : la nouvelle
+ * instance remplace alors l'interface laissée par l'ancienne (orpheline).
+ */
+const INSTANCE = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+const GUARD_KEY = '__onbloqueContentScript';
+interface InstanceGuard {
+  instance: string;
+  alive: () => boolean;
+  shutdown: () => void;
+}
+/** Vrai quand cette instance a cédé la place (ou est orpheline) : plus aucun minuteur. */
+let stopped = false;
+let tickTimer: ReturnType<typeof setInterval> | undefined;
+let obs: MutationObserver | null = null;
 
 function viewport(): Viewport {
   return { width: window.innerWidth, height: window.innerHeight };
@@ -97,7 +115,10 @@ function ensureStyle(): void {
 #${ROOT_ID}.busy .ob-count{display:block}
 #${ROOT_ID}[data-state="cap"] .ob-count,#${ROOT_ID}[data-state="rate-limit"] .ob-count,#${ROOT_ID}[data-state="retry"] .ob-count{background:#ffad1f;color:#0f1419;border-color:#ffad1f}
 #${ROOT_ID}[data-state="error"] .ob-count{background:#f4212e;border-color:#f4212e}
-#${ROOT_ID} .ob-flash{padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:240px}
+#${ROOT_ID} .ob-flash{padding:8px 10px;border-radius:10px;background:#f4212e;color:#fff;font-size:12px;max-width:260px;display:flex;align-items:center;gap:8px}
+#${ROOT_ID} .ob-flash.info{background:#0f1419;border:1px solid #2f3336;color:#e7e9ea}
+#${ROOT_ID} .ob-flash .ob-reload{flex:0 0 auto;background:#1d9bf0;color:#fff;padding:6px 12px}
+#${ROOT_ID} .ob-flash .ob-reload:hover{background:#1a8cd8}
 `;
   document.documentElement.appendChild(style);
 }
@@ -159,6 +180,7 @@ function buildRoot(): HTMLElement {
   if (root) return root;
   root = document.createElement('div');
   root.id = ROOT_ID;
+  root.dataset.instance = INSTANCE;
   const pop = document.createElement('div');
   pop.className = 'ob-pop';
   const panel = document.createElement('div');
@@ -329,6 +351,11 @@ function wire(root: HTMLElement): void {
   main.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!extensionContextAlive()) {
+      goStale(root);
+      showError(root, CONTEXT_INVALIDATED);
+      return;
+    }
     if (shownPos) root.classList.toggle('down', opensDownward(shownPos, viewport(), PANEL_HEIGHT_ESTIMATE));
     root.classList.toggle('open');
     main.setAttribute('aria-expanded', root.classList.contains('open') ? 'true' : 'false');
@@ -358,9 +385,9 @@ function wire(root: HTMLElement): void {
           // Le content script ne lit pas l'état : le background charge la liste stockée.
           resp = await sendMessage({ type: 'OPEN_PREVIEW', mode: 'list', sourceLabel: 'liste' });
         }
-        if (resp && !resp.ok) flash(root, explain(resp.error));
+        if (resp && !resp.ok) showError(root, resp.error);
       } catch (err) {
-        flash(root, explain((err as Error).message));
+        showError(root, (err as Error).message);
       }
     });
   });
@@ -376,26 +403,41 @@ function wire(root: HTMLElement): void {
   );
 }
 
-/** Raison lisible côté page (jamais un faux « liste vide »). */
-function explain(error: string | undefined): string {
-  if (!error) return 'OnBloque ne répond pas. Rechargez la page.';
-  if (/context invalidated|Receiving end does not exist/i.test(error)) {
-    return 'L’extension a été rechargée : rechargez cette page x.com.';
-  }
-  return error;
+/** Affiche une erreur lisible (jamais l'erreur JS brute) et coupe les minuteurs si le script est orphelin. */
+function showError(root: HTMLElement, error: string | undefined): void {
+  const view = explainContentError(error);
+  if (view.stale) goStale(root);
+  flash(root, view.text, { reload: view.reload });
 }
 
-function flash(root: HTMLElement, text: string): void {
+let flashTimer: ReturnType<typeof setTimeout> | undefined;
+function flash(root: HTMLElement, text: string, opts: { reload?: boolean } = {}): void {
   const pop = root.querySelector('.ob-pop') as HTMLElement;
   let el = root.querySelector('.ob-flash') as HTMLElement | null;
   if (!el) {
     el = document.createElement('div');
-    el.className = 'ob-flash';
     el.setAttribute('role', 'status');
     pop.insertBefore(el, pop.firstChild);
   }
-  el.textContent = text;
-  setTimeout(() => el?.remove(), 6000);
+  el.className = opts.reload ? 'ob-flash info' : 'ob-flash';
+  const msg = document.createElement('span');
+  msg.textContent = text;
+  el.replaceChildren(msg);
+  if (opts.reload) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ob-reload';
+    btn.textContent = 'Recharger';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      location.reload();
+    });
+    el.appendChild(btn);
+  }
+  clearTimeout(flashTimer);
+  const shown = el;
+  flashTimer = setTimeout(() => shown.remove(), opts.reload ? 20000 : 6000);
 }
 
 let progress: FabProgress | null = null;
@@ -452,13 +494,22 @@ function wireProgress(root: HTMLElement): void {
     /* contexte invalidé */
   }
   void requestProgress();
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') void requestProgress();
-  });
+  document.addEventListener('visibilitychange', onVisible);
+}
+
+function onVisible(): void {
+  if (document.visibilityState === 'visible') void requestProgress();
 }
 
 async function requestProgress(): Promise<void> {
+  if (stopped) return;
   const resp = await sendMessage({ type: 'GET_PROGRESS' });
+  if (!resp.ok && resp.error === CONTEXT_INVALIDATED) {
+    const r = document.getElementById(ROOT_ID);
+    if (r && r.dataset.instance === INSTANCE) goStale(r);
+    else shutdown();
+    return;
+  }
   if (!resp.ok || !('progress' in resp)) return;
   const p = parseFabProgress(resp.progress);
   if (!p) return;
@@ -468,6 +519,13 @@ async function requestProgress(): Promise<void> {
 }
 
 function mount(): void {
+  if (stopped) return;
+  const existing = document.getElementById(ROOT_ID);
+  if (existing && existing.dataset.instance !== INSTANCE) {
+    // Une instance plus récente a pris la main : celle-ci s'efface.
+    shutdown();
+    return;
+  }
   ensureStyle();
   const root = buildRoot();
   if (!root.isConnected) document.documentElement.appendChild(root);
@@ -489,11 +547,7 @@ function mount(): void {
 
 /** Faux après un rechargement / une mise à jour de l'extension (ce script devient orphelin). */
 function contextAlive(): boolean {
-  try {
-    return !!chrome?.runtime?.id;
-  } catch {
-    return false;
-  }
+  return extensionContextAlive();
 }
 
 /**
@@ -507,33 +561,95 @@ function markStale(root: HTMLElement): void {
   const count = root.querySelector('.ob-count') as HTMLElement | null;
   if (count) count.textContent = '';
   const main = root.querySelector('.ob-main') as HTMLButtonElement | null;
-  if (main) main.title = 'OnBloque a été rechargé : rechargez cette page x.com pour voir la progression.';
+  if (main) main.title = 'OnBloque a été mis à jour : recharge la page (F5) pour continuer.';
+}
+
+/** Contexte mort : bouton grisé + arrêt de tous les minuteurs (pas d'erreurs en boucle). */
+function goStale(root: HTMLElement): void {
+  markStale(root);
+  stopWatching();
+}
+
+function stopWatching(): void {
+  clearInterval(tickTimer);
+  tickTimer = undefined;
+  clearTimeout(resizeTimer);
+  obs?.disconnect();
+  obs = null;
+  window.removeEventListener('resize', onResize);
+  window.removeEventListener('popstate', onTick);
+  document.removeEventListener('visibilitychange', onVisible);
+}
+
+/** Cède la place à une instance plus récente (ne touche pas à son interface). */
+function shutdown(): void {
+  stopped = true;
+  stopWatching();
 }
 
 let lastUrl = location.href;
 function onTick(): void {
+  if (stopped) return;
   if (location.href !== lastUrl) lastUrl = location.href;
+  if (!contextAlive()) {
+    const root = document.getElementById(ROOT_ID);
+    if (root && root.dataset.instance === INSTANCE) goStale(root);
+    else shutdown();
+    return;
+  }
   mount(); // ré-attache si besoin + réévalue les chevauchements (le tiroir de X apparaît tard)
-  const root = document.getElementById(ROOT_ID);
-  if (root && !contextAlive()) markStale(root);
 }
 
-mount();
-
-const obs = new MutationObserver(() => {
-  if (!document.getElementById(ROOT_ID)?.isConnected) mount();
-});
-obs.observe(document.documentElement, { childList: true, subtree: true });
-
 let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-window.addEventListener('resize', () => {
+function onResize(): void {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     const root = document.getElementById(ROOT_ID);
-    if (root) relayout(root);
+    if (root && !stopped) relayout(root);
   }, 150);
-});
+}
 
-// X est une SPA : surveiller l'URL et l'UI fixe qui apparaît après coup.
-setInterval(onTick, 1500);
-window.addEventListener('popstate', onTick);
+/**
+ * Démarrage idempotent : une seule instance vivante par onglet. Une injection en double
+ * (manifeste + réinjection après installation) ne fait rien ; une instance orpheline est
+ * arrêtée et son bouton remplacé.
+ */
+function start(): void {
+  const w = window as unknown as Record<string, InstanceGuard | undefined>;
+  const prev = w[GUARD_KEY];
+  if (prev && prev.instance !== INSTANCE) {
+    let prevAlive = false;
+    try {
+      prevAlive = prev.alive();
+    } catch {
+      prevAlive = false;
+    }
+    if (prevAlive) return; // déjà injecté et fonctionnel
+    try {
+      prev.shutdown();
+    } catch {
+      /* ancienne instance inaccessible */
+    }
+  }
+  w[GUARD_KEY] = { instance: INSTANCE, alive: contextAlive, shutdown };
+
+  // Interface laissée par une instance précédente (orpheline) : on la remplace.
+  const old = document.getElementById(ROOT_ID);
+  if (old && old.dataset.instance !== INSTANCE) old.remove();
+  document.getElementById(STYLE_ID)?.remove();
+
+  mount();
+
+  obs = new MutationObserver(() => {
+    if (stopped) return;
+    if (!document.getElementById(ROOT_ID)?.isConnected) mount();
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.addEventListener('resize', onResize);
+  // X est une SPA : surveiller l'URL et l'UI fixe qui apparaît après coup.
+  tickTimer = setInterval(onTick, 1500);
+  window.addEventListener('popstate', onTick);
+}
+
+start();
